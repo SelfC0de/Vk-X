@@ -77,4 +77,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     implementation(libs.zxing)
     implementation(libs.zxing.android)
+    implementation(libs.androidx.work.runtime)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
 }

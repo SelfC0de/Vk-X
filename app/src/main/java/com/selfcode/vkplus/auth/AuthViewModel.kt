@@ -4,6 +4,8 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.selfcode.vkplus.data.local.TokenStorage
+import com.selfcode.vkplus.data.repository.VKRepository
+import com.selfcode.vkplus.data.repository.VKResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,7 +15,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val tokenStorage: TokenStorage
+    private val tokenStorage: TokenStorage,
+    private val repository: VKRepository
 ) : ViewModel() {
 
     private val _authState = MutableStateFlow<AuthState>(AuthState.Checking)
@@ -39,17 +42,27 @@ class AuthViewModel @Inject constructor(
             kv[0] to kv.getOrElse(1) { "" }
         }
         val token = params["access_token"] ?: return
-        val userId = params["user_id"]?.toIntOrNull() ?: return
+        val userId = params["user_id"]?.toIntOrNull() ?: 0
         viewModelScope.launch {
             tokenStorage.saveToken(token, userId)
             _authState.value = AuthState.Authenticated
         }
     }
 
-    fun saveManualToken(token: String, userId: Int) {
+    fun saveManualToken(token: String) {
         viewModelScope.launch {
-            tokenStorage.saveToken(token, userId)
-            _authState.value = AuthState.Authenticated
+            _authState.value = AuthState.Checking
+            tokenStorage.saveToken(token, 0)
+            when (val result = repository.getCurrentUser()) {
+                is VKResult.Success -> {
+                    tokenStorage.saveToken(token, result.data.id)
+                    _authState.value = AuthState.Authenticated
+                }
+                is VKResult.Error -> {
+                    tokenStorage.clearToken()
+                    _authState.value = AuthState.InvalidToken
+                }
+            }
         }
     }
 
@@ -65,4 +78,5 @@ sealed class AuthState {
     object Checking : AuthState()
     object Authenticated : AuthState()
     object Unauthenticated : AuthState()
+    object InvalidToken : AuthState()
 }

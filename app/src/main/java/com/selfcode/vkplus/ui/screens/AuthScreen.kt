@@ -22,6 +22,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.selfcode.vkplus.auth.QrAuthScreen
 import com.selfcode.vkplus.auth.VKConfig
 import com.selfcode.vkplus.ui.theme.*
 
@@ -31,9 +32,10 @@ import com.selfcode.vkplus.ui.theme.*
 fun AuthScreen(
     onTokenReceived: (Uri) -> Unit,
     onQrAuthenticated: () -> Unit,
-    onManualToken: (token: String, userId: Int) -> Unit
+    onManualToken: (token: String) -> Unit,
+    invalidToken: Boolean = false
 ) {
-    var tabIndex by remember { mutableIntStateOf(0) }
+    var tabIndex by remember { mutableIntStateOf(if (invalidToken) 1 else 0) }
     var isLoading by remember { mutableStateOf(true) }
 
     Column(modifier = Modifier.fillMaxSize().background(Background)) {
@@ -42,85 +44,63 @@ fun AuthScreen(
             containerColor = Surface,
             contentColor = CyberBlue
         ) {
-            Tab(
-                selected = tabIndex == 0,
-                onClick = { tabIndex = 0 },
-                text = { Text("Пароль", color = if (tabIndex == 0) CyberBlue else OnSurfaceMuted) }
-            )
-            Tab(
-                selected = tabIndex == 1,
-                onClick = { tabIndex = 1 },
-                text = { Text("Токен", color = if (tabIndex == 1) CyberBlue else OnSurfaceMuted) }
-            )
+            listOf("Пароль", "Токен").forEachIndexed { i, title ->
+                Tab(
+                    selected = tabIndex == i,
+                    onClick = { tabIndex = i },
+                    text = { Text(title, color = if (tabIndex == i) CyberBlue else OnSurfaceMuted) }
+                )
+            }
         }
 
         when (tabIndex) {
-            0 -> {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    AndroidView(
-                        factory = { ctx ->
-                            WebView(ctx).apply {
-                                settings.javaScriptEnabled = true
-                                settings.domStorageEnabled = true
-                                settings.userAgentString =
-                                    "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36"
-                                webViewClient = object : WebViewClient() {
-                                    override fun shouldOverrideUrlLoading(
-                                        view: WebView,
-                                        request: WebResourceRequest
-                                    ): Boolean {
-                                        val url = request.url.toString()
-                                        return when {
-                                            url.startsWith("https://oauth.vk.com/blank.html") -> {
-                                                onTokenReceived(request.url)
-                                                true
-                                            }
-                                            url.startsWith("vkontakte://") ||
-                                            url.startsWith("vk://") ||
-                                            !url.startsWith("http") -> true
-                                            else -> false
-                                        }
-                                    }
-                                    override fun onPageFinished(view: WebView, url: String) {
-                                        isLoading = false
+            0 -> Box(modifier = Modifier.fillMaxSize()) {
+                AndroidView(
+                    factory = { ctx ->
+                        WebView(ctx).apply {
+                            settings.javaScriptEnabled = true
+                            settings.domStorageEnabled = true
+                            settings.userAgentString = "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36"
+                            webViewClient = object : WebViewClient() {
+                                override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                                    val url = request.url.toString()
+                                    return when {
+                                        url.startsWith("https://oauth.vk.com/blank.html") -> { onTokenReceived(request.url); true }
+                                        url.startsWith("vkontakte://") || url.startsWith("vk://") || !url.startsWith("http") -> true
+                                        else -> false
                                     }
                                 }
-                                loadUrl(VKConfig.authUrl())
+                                override fun onPageFinished(view: WebView, url: String) { isLoading = false }
                             }
-                        },
-                        modifier = Modifier.fillMaxSize()
-                    )
-                    if (isLoading) {
-                        Box(
-                            modifier = Modifier.fillMaxSize().background(Background),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                CircularProgressIndicator(color = CyberBlue)
-                                Spacer(Modifier.height(16.dp))
-                                Text("VK+", color = CyberBlue, fontSize = 28.sp, letterSpacing = 4.sp)
-                            }
+                            loadUrl(VKConfig.authUrl())
+                        }
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+                if (isLoading) {
+                    Box(modifier = Modifier.fillMaxSize().background(Background), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator(color = CyberBlue)
+                            Spacer(Modifier.height(16.dp))
+                            Text("VK+", color = CyberBlue, fontSize = 28.sp, letterSpacing = 4.sp)
                         }
                     }
                 }
             }
-            1 -> TokenLoginTab(onManualToken = onManualToken)
+            1 -> TokenLoginTab(onManualToken = onManualToken, showInvalidError = invalidToken)
         }
     }
 }
 
 @Composable
-private fun TokenLoginTab(onManualToken: (String, Int) -> Unit) {
+private fun TokenLoginTab(onManualToken: (String) -> Unit, showInvalidError: Boolean) {
     var token by remember { mutableStateOf("") }
-    var userId by remember { mutableStateOf("") }
     var tokenVisible by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var error by remember { mutableStateOf(if (showInvalidError) "Токен недействителен. Введите новый." else null) }
+    var isLoading by remember { mutableStateOf(false) }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Background)
-            .padding(24.dp),
+        modifier = Modifier.fillMaxSize().background(Background).padding(24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -140,47 +120,23 @@ private fun TokenLoginTab(onManualToken: (String, Int) -> Unit) {
                 IconButton(onClick = { tokenVisible = !tokenVisible }) {
                     Icon(
                         if (tokenVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                        contentDescription = null,
-                        tint = OnSurfaceMuted
+                        contentDescription = null, tint = OnSurfaceMuted
                     )
                 }
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = CyberBlue,
-                unfocusedBorderColor = Divider,
-                focusedTextColor = OnSurface,
-                unfocusedTextColor = OnSurface,
-                focusedLabelColor = CyberBlue,
-                cursorColor = CyberBlue
+                focusedBorderColor = CyberBlue, unfocusedBorderColor = Divider,
+                focusedTextColor = OnSurface, unfocusedTextColor = OnSurface,
+                focusedLabelColor = CyberBlue, cursorColor = CyberBlue
             ),
             shape = RoundedCornerShape(10.dp),
-            singleLine = true
-        )
-
-        Spacer(Modifier.height(12.dp))
-
-        OutlinedTextField(
-            value = userId,
-            onValueChange = { userId = it; error = null },
-            label = { Text("User ID", color = OnSurfaceMuted) },
-            placeholder = { Text("123456789", color = OnSurfaceMuted) },
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = CyberBlue,
-                unfocusedBorderColor = Divider,
-                focusedTextColor = OnSurface,
-                unfocusedTextColor = OnSurface,
-                focusedLabelColor = CyberBlue,
-                cursorColor = CyberBlue
-            ),
-            shape = RoundedCornerShape(10.dp),
-            singleLine = true
+            singleLine = true,
+            isError = error != null
         )
 
         if (error != null) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(6.dp))
             Text(error!!, color = ErrorRed, fontSize = 13.sp)
         }
 
@@ -188,26 +144,27 @@ private fun TokenLoginTab(onManualToken: (String, Int) -> Unit) {
 
         Button(
             onClick = {
-                val id = userId.trim().toIntOrNull()
                 when {
                     token.isBlank() -> error = "Введите токен"
-                    id == null -> error = "User ID должен быть числом"
-                    else -> onManualToken(token.trim(), id)
+                    else -> { isLoading = true; onManualToken(token.trim()) }
                 }
             },
             modifier = Modifier.fillMaxWidth().height(50.dp),
+            enabled = !isLoading,
             colors = ButtonDefaults.buttonColors(containerColor = CyberBlue),
             shape = RoundedCornerShape(10.dp)
         ) {
-            Text("Войти", color = Background, fontSize = 15.sp)
+            if (isLoading) {
+                CircularProgressIndicator(color = Background, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+            } else {
+                Text("Войти", color = Background, fontSize = 15.sp)
+            }
         }
 
         Spacer(Modifier.height(16.dp))
         Text(
-            text = "Токен можно получить через браузер:\noauth.vk.com/authorize?client_id=2685278\n&scope=offline&response_type=token",
-            color = OnSurfaceMuted,
-            fontSize = 11.sp,
-            lineHeight = 16.sp
+            text = "Получить токен:\noauth.vk.com/authorize?client_id=2685278\n&scope=offline&response_type=token",
+            color = OnSurfaceMuted, fontSize = 11.sp, lineHeight = 16.sp
         )
     }
 }

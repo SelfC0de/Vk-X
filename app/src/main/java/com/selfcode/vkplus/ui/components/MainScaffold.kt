@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,6 +38,7 @@ private val drawerItems = listOf(
     DrawerItem(Screen.Messages, "Сообщения", Icons.Outlined.Message, Icons.Filled.Message),
     DrawerItem(Screen.Friends, "Друзья", Icons.Outlined.People, Icons.Filled.People),
     DrawerItem(Screen.Profile, "Профиль", Icons.Outlined.Person, Icons.Filled.Person),
+    DrawerItem(Screen.Settings, "Настройки", Icons.Outlined.Settings, Icons.Filled.Settings),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)

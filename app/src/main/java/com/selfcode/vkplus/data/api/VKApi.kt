@@ -91,6 +91,12 @@ interface VKApi {
         @Query("v") version: String = "5.199"
     ): VKResponse<VKQrCodeResponse>
 
+    @GET("account.setOffline")
+    suspend fun setOffline(
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<Int>
+
     @GET("auth.checkAuthCode")
     suspend fun checkQrCode(
         @Query("auth_hash") authHash: String,

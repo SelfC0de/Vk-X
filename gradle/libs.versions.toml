@@ -16,6 +16,8 @@ datastore = "1.1.1"
 coroutines = "1.9.0"
 gson = "2.11.0"
 accompanist = "0.36.0"
+workmanager = "2.9.1"
+hilt-work = "1.2.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -46,6 +48,10 @@ accompanist-systemuicontroller = { group = "com.google.accompanist", name = "acc
 
 zxing = { group = "com.google.zxing", name = "core", version = "3.5.3" }
 zxing-android = { group = "com.journeyapps", name = "zxing-android-embedded", version = "4.3.0" }
+
+androidx-work-runtime = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workmanager" }
+androidx-hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hilt-work" }
+androidx-hilt-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "hilt-work" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

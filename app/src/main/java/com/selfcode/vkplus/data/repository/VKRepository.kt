@@ -71,6 +71,12 @@ class VKRepository @Inject constructor(
         VKResult.Success(resp.response?.likes ?: 0)
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
 
+    suspend fun setOffline(): VKResult<Int> = runCatching {
+        val resp = api.setOffline(token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response ?: 0)
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
     suspend fun getQrCode(): VKResult<VKQrCodeResponse> = runCatching {
         val resp = api.getQrCode(clientId = 2685278)
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
