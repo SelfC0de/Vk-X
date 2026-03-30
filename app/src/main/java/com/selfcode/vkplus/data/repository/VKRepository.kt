@@ -71,6 +71,19 @@ class VKRepository @Inject constructor(
         VKResult.Success(resp.response?.likes ?: 0)
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
 
+    suspend fun getBannedFriends(): VKResult<List<com.selfcode.vkplus.data.model.VKUser>> = runCatching {
+        val resp = api.getFriendsWithStatus(token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        val banned = (resp.response?.items ?: emptyList()).filter { it.isBanned }
+        VKResult.Success(banned)
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun removeFriend(userId: Int): VKResult<Int> = runCatching {
+        val resp = api.deleteFriend(userId = userId, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(1)
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
     suspend fun setOffline(): VKResult<Int> = runCatching {
         val resp = api.setOffline(token = token())
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)

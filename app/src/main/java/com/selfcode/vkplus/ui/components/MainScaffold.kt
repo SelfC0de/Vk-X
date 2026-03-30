@@ -39,6 +39,7 @@ private val drawerItems = listOf(
     DrawerItem(Screen.Friends, "Друзья", Icons.Outlined.People, Icons.Filled.People),
     DrawerItem(Screen.Profile, "Профиль", Icons.Outlined.Person, Icons.Filled.Person),
     DrawerItem(Screen.Settings, "Настройки", Icons.Outlined.Settings, Icons.Filled.Settings),
+    DrawerItem(Screen.Tools, "Инструменты", Icons.Outlined.Build, Icons.Filled.Build),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)

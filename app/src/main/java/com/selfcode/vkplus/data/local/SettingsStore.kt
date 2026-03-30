@@ -28,6 +28,9 @@ class SettingsStore @Inject constructor(
         val KEY_ANTI_SCREEN   = booleanPreferencesKey("anti_screen")
         val KEY_TYPE_PUSH     = booleanPreferencesKey("type_push")
         val KEY_DEVICE_UA     = stringPreferencesKey("device_ua")
+        val KEY_BYPASS_COPY      = booleanPreferencesKey("bypass_copy")
+        val KEY_GHOST_STORY      = booleanPreferencesKey("ghost_story")
+        val KEY_TYPE_STATUS      = stringPreferencesKey("type_status")
     }
 
     val unRead:       Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_UNREAD]        ?: false }
@@ -38,6 +41,9 @@ class SettingsStore @Inject constructor(
     val antiScreen:   Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_ANTI_SCREEN]   ?: false }
     val typePush:     Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_TYPE_PUSH]     ?: false }
     val deviceUa:     Flow<String>  = context.settingsDataStore.data.map { it[KEY_DEVICE_UA]     ?: DeviceProfile.KATE.ua }
+    val bypassCopy:   Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_BYPASS_COPY]   ?: true }
+    val ghostStory:   Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_GHOST_STORY]   ?: false }
+    val typeStatus:   Flow<String>  = context.settingsDataStore.data.map { it[KEY_TYPE_STATUS]   ?: TypeStatus.NONE.value }
 
     suspend fun setUnRead(v: Boolean)        = context.settingsDataStore.edit { it[KEY_UNREAD]        = v }
     suspend fun setUnType(v: Boolean)        = context.settingsDataStore.edit { it[KEY_UNTYPE]        = v }
@@ -47,6 +53,9 @@ class SettingsStore @Inject constructor(
     suspend fun setAntiScreen(v: Boolean)    = context.settingsDataStore.edit { it[KEY_ANTI_SCREEN]   = v }
     suspend fun setTypePush(v: Boolean)      = context.settingsDataStore.edit { it[KEY_TYPE_PUSH]     = v }
     suspend fun setDeviceUa(ua: String)      = context.settingsDataStore.edit { it[KEY_DEVICE_UA]     = ua }
+    suspend fun setBypassCopy(v: Boolean)    = context.settingsDataStore.edit { it[KEY_BYPASS_COPY]   = v }
+    suspend fun setGhostStory(v: Boolean)    = context.settingsDataStore.edit { it[KEY_GHOST_STORY]   = v }
+    suspend fun setTypeStatus(v: String)     = context.settingsDataStore.edit { it[KEY_TYPE_STATUS]   = v }
 }
 
 enum class DeviceProfile(val label: String, val ua: String) {
@@ -66,4 +75,13 @@ enum class DeviceProfile(val label: String, val ua: String) {
         "VK Windows",
         "VKDesktopApp/6.8.0 (Windows; 10; 19042)"
     )
+}
+
+enum class TypeStatus(val value: String, val label: String, val emoji: String) {
+    NONE("none", "Отключено", "❌"),
+    TYPING("typing", "Печатает...", "⌨️"),
+    AUDIO("audiomessage", "Записывает голосовое", "🎤"),
+    VIDEO("videomessage", "Записывает видео", "📹"),
+    PHOTO("photo", "Загружает фото", "📸"),
+    FILE("file", "Отправляет файл", "📎")
 }

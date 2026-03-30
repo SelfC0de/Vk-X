@@ -1,6 +1,10 @@
 package com.selfcode.vkplus.ui.screens.messages
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -131,8 +135,10 @@ fun ChatScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MessageBubble(message: VKMessage) {
+    val clipboard = LocalClipboardManager.current
     val isOut = message.isOutgoing
     val time = remember(message.date) {
         SimpleDateFormat("HH:mm", Locale("ru")).format(Date(message.date * 1000))
@@ -145,6 +151,10 @@ fun MessageBubble(message: VKMessage) {
         Box(
             modifier = Modifier
                 .widthIn(max = 280.dp)
+                .combinedClickable(
+                    onClick = {},
+                    onLongClick = { if (message.text.isNotBlank()) clipboard.setText(AnnotatedString(message.text)) }
+                )
                 .background(
                     if (isOut) CyberBlue.copy(alpha = 0.85f) else SurfaceVariant,
                     RoundedCornerShape(

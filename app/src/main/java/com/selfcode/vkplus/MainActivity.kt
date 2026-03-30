@@ -21,6 +21,7 @@ import com.selfcode.vkplus.ui.screens.friends.FriendsScreen
 import com.selfcode.vkplus.ui.screens.messages.MessagesScreen
 import com.selfcode.vkplus.ui.screens.profile.ProfileScreen
 import com.selfcode.vkplus.ui.screens.settings.SettingsScreen
+import com.selfcode.vkplus.ui.screens.tools.ToolsScreen
 import com.selfcode.vkplus.ui.theme.VKPlusTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
@@ -110,6 +111,7 @@ fun AuthenticatedApp(
             Screen.Friends -> FriendsScreen()
             Screen.Profile -> ProfileScreen(onLogout = onLogout)
             Screen.Settings -> SettingsScreen(onAntiScreenChanged = onAntiScreenChanged)
+            Screen.Tools -> ToolsScreen()
             else -> FeedScreen()
         }
     }

@@ -20,10 +20,12 @@ data class VKUser(
     @SerializedName("photo_100") val photo100: String? = null,
     @SerializedName("online") val online: Int = 0,
     @SerializedName("status") val status: String? = null,
-    @SerializedName("city") val city: VKCity? = null
+    @SerializedName("city") val city: VKCity? = null,
+    @SerializedName("deactivated") val deactivated: String? = null
 ) {
     val fullName get() = "$firstName $lastName"
     val isOnline get() = online == 1
+    val isBanned get() = deactivated != null
 }
 
 data class VKCity(

@@ -85,6 +85,21 @@ interface VKApi {
         @Query("v") version: String = "5.199"
     ): VKResponse<VKLikeResult>
 
+    @GET("friends.get")
+    suspend fun getFriendsWithStatus(
+        @Query("fields") fields: String = "deactivated,photo_100,online",
+        @Query("count") count: Int = 5000,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<VKFriendsResponse>
+
+    @GET("friends.delete")
+    suspend fun deleteFriend(
+        @Query("user_id") userId: Int,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<VKDeleteFriendResult>
+
     @GET("auth.getAuthCode")
     suspend fun getQrCode(
         @Query("client_id") clientId: Int,
@@ -141,4 +156,8 @@ data class VKQrCheckResponse(
     @com.google.gson.annotations.SerializedName("status") val status: Int,
     @com.google.gson.annotations.SerializedName("access_token") val accessToken: String? = null,
     @com.google.gson.annotations.SerializedName("user_id") val userId: Int? = null
+)
+
+data class VKDeleteFriendResult(
+    @com.google.gson.annotations.SerializedName("success") val success: Int = 0
 )
