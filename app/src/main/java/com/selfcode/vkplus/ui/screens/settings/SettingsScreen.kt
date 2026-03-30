@@ -90,7 +90,7 @@ private fun PrivacyTab(
             )
             SettingsDivider()
             SettingsToggle(
-                icon = Icons.Default.Ghost,
+                icon = Icons.Default.PersonOff,
                 title = "Ghost Online",
                 subtitle = "Никогда не отправлять account.setOnline",
                 checked = state.ghostOnline,

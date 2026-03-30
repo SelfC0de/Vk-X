@@ -9,7 +9,6 @@ import androidx.compose.runtime.*
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.selfcode.vkplus.auth.AuthState
 import com.selfcode.vkplus.auth.AuthViewModel
-import com.selfcode.vkplus.auth.AuthViewModel
 import com.selfcode.vkplus.data.local.SettingsStore
 import com.selfcode.vkplus.data.model.VKUser
 import com.selfcode.vkplus.data.repository.VKRepository
