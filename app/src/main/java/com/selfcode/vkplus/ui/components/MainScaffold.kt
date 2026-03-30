@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -38,6 +39,7 @@ private val drawerItems = listOf(
     DrawerItem(Screen.Profile, "Профиль", Icons.Outlined.Person, Icons.Filled.Person),
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScaffold(
     currentScreen: Screen,
@@ -101,7 +103,7 @@ fun MainScaffold(
                             .fillMaxWidth()
                             .padding(horizontal = 12.dp, vertical = 2.dp)
                             .background(
-                                if (selected) CyberBlue.copy(alpha = 0.12f) else androidx.compose.ui.graphics.Color.Transparent,
+                                if (selected) CyberBlue.copy(alpha = 0.12f) else Color.Transparent,
                                 RoundedCornerShape(10.dp)
                             )
                             .clickable {
