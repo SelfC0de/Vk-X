@@ -1,7 +1,10 @@
 package com.selfcode.vkplus.data.repository
 
 import com.selfcode.vkplus.data.api.VKApi
+import com.selfcode.vkplus.data.api.VKConversationsResponse
 import com.selfcode.vkplus.data.api.VKNewsfeedResponse
+import com.selfcode.vkplus.data.api.VKQrCheckResponse
+import com.selfcode.vkplus.data.api.VKQrCodeResponse
 import com.selfcode.vkplus.data.local.TokenStorage
 import com.selfcode.vkplus.data.model.*
 import kotlinx.coroutines.flow.first
@@ -30,22 +33,31 @@ class VKRepository @Inject constructor(
     suspend fun getNewsfeed(startFrom: String? = null): VKResult<VKNewsfeedResponse> = runCatching {
         val resp = api.getNewsfeed(token = token(), startFrom = startFrom)
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
-        val data = resp.response ?: return VKResult.Error("Empty response")
-        VKResult.Success(data)
+        VKResult.Success(resp.response ?: return VKResult.Error("Empty response"))
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
 
     suspend fun getFriends(): VKResult<VKFriendsResponse> = runCatching {
         val resp = api.getFriends(token = token())
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
-        val data = resp.response ?: return VKResult.Error("Empty response")
-        VKResult.Success(data)
+        VKResult.Success(resp.response ?: return VKResult.Error("Empty response"))
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
 
-    suspend fun getConversations(): VKResult<com.selfcode.vkplus.data.api.VKConversationsResponse> = runCatching {
+    suspend fun getConversations(): VKResult<VKConversationsResponse> = runCatching {
         val resp = api.getConversations(token = token())
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
-        val data = resp.response ?: return VKResult.Error("Empty response")
-        VKResult.Success(data)
+        VKResult.Success(resp.response ?: return VKResult.Error("Empty response"))
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun getMessages(peerId: Int): VKResult<List<VKMessage>> = runCatching {
+        val resp = api.getHistory(peerId = peerId, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response?.items ?: emptyList())
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun sendMessage(peerId: Int, text: String): VKResult<Int> = runCatching {
+        val resp = api.sendMessage(peerId = peerId, message = text, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response ?: 0)
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
 
     suspend fun toggleLike(post: VKPost): VKResult<Int> = runCatching {
@@ -57,5 +69,17 @@ class VKRepository @Inject constructor(
         }
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
         VKResult.Success(resp.response?.likes ?: 0)
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun getQrCode(): VKResult<VKQrCodeResponse> = runCatching {
+        val resp = api.getQrCode(clientId = 2685278)
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response ?: return VKResult.Error("Empty response"))
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun checkQrCode(authHash: String): VKResult<VKQrCheckResponse> = runCatching {
+        val resp = api.checkQrCode(authHash = authHash)
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response ?: return VKResult.Error("Empty response"))
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
 }

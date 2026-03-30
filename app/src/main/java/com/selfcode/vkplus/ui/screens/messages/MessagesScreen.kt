@@ -1,6 +1,7 @@
 package com.selfcode.vkplus.ui.screens.messages
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -26,6 +27,21 @@ import java.util.*
 @Composable
 fun MessagesScreen(viewModel: MessagesViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsState()
+    var selectedDialog by remember { mutableStateOf<VKDialog?>(null) }
+
+    if (selectedDialog != null) {
+        val dialog = selectedDialog!!
+        val peerId = dialog.conversation.peer.id
+        val profile = state.profiles[peerId]
+        ChatScreen(
+            peerName = profile?.fullName ?: "Диалог",
+            peerPhoto = profile?.photo100,
+            peerId = peerId,
+            onBack = { selectedDialog = null },
+            viewModel = viewModel
+        )
+        return
+    }
 
     Box(modifier = Modifier.fillMaxSize().background(Background)) {
         when {
@@ -43,7 +59,8 @@ fun MessagesScreen(viewModel: MessagesViewModel = hiltViewModel()) {
                     DialogRow(
                         dialog = dialog,
                         authorName = state.profiles[dialog.conversation.peer.id]?.fullName ?: "Диалог",
-                        authorPhoto = state.profiles[dialog.conversation.peer.id]?.photo100
+                        authorPhoto = state.profiles[dialog.conversation.peer.id]?.photo100,
+                        onClick = { selectedDialog = dialog }
                     )
                     HorizontalDivider(
                         color = Divider,
@@ -57,7 +74,12 @@ fun MessagesScreen(viewModel: MessagesViewModel = hiltViewModel()) {
 }
 
 @Composable
-fun DialogRow(dialog: VKDialog, authorName: String, authorPhoto: String?) {
+fun DialogRow(
+    dialog: VKDialog,
+    authorName: String,
+    authorPhoto: String?,
+    onClick: () -> Unit
+) {
     val date = remember(dialog.lastMessage.date) {
         SimpleDateFormat("HH:mm", Locale("ru")).format(Date(dialog.lastMessage.date * 1000))
     }
@@ -66,16 +88,14 @@ fun DialogRow(dialog: VKDialog, authorName: String, authorPhoto: String?) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onClick() }
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         AsyncImage(
             model = authorPhoto,
             contentDescription = null,
-            modifier = Modifier
-                .size(50.dp)
-                .clip(CircleShape)
-                .background(SurfaceVariant),
+            modifier = Modifier.size(50.dp).clip(CircleShape).background(SurfaceVariant),
             contentScale = ContentScale.Crop
         )
         Spacer(Modifier.width(12.dp))

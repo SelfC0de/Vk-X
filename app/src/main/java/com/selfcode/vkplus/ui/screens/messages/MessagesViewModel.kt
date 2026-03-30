@@ -2,8 +2,8 @@ package com.selfcode.vkplus.ui.screens.messages
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.selfcode.vkplus.data.api.VKConversationsResponse
 import com.selfcode.vkplus.data.model.VKDialog
+import com.selfcode.vkplus.data.model.VKMessage
 import com.selfcode.vkplus.data.model.VKUser
 import com.selfcode.vkplus.data.repository.VKRepository
 import com.selfcode.vkplus.data.repository.VKResult
@@ -16,7 +16,9 @@ import javax.inject.Inject
 data class MessagesUiState(
     val dialogs: List<VKDialog> = emptyList(),
     val profiles: Map<Int, VKUser> = emptyMap(),
+    val chatMessages: Map<Int, List<VKMessage>> = emptyMap(),
     val isLoading: Boolean = false,
+    val isChatLoading: Boolean = false,
     val error: String? = null
 )
 
@@ -27,6 +29,9 @@ class MessagesViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(MessagesUiState(isLoading = true))
     val uiState: StateFlow<MessagesUiState> = _uiState
+
+    private val _isSending = MutableStateFlow(false)
+    val isSending: StateFlow<Boolean> = _isSending
 
     init { load() }
 
@@ -43,6 +48,38 @@ class MessagesViewModel @Inject constructor(
                     isLoading = false, error = r.message
                 )
             }
+        }
+    }
+
+    fun loadMessages(peerId: Int) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isChatLoading = true)
+            when (val r = repository.getMessages(peerId)) {
+                is VKResult.Success -> {
+                    val current = _uiState.value.chatMessages.toMutableMap()
+                    current[peerId] = r.data.reversed()
+                    _uiState.value = _uiState.value.copy(
+                        chatMessages = current,
+                        isChatLoading = false
+                    )
+                }
+                is VKResult.Error -> {
+                    _uiState.value = _uiState.value.copy(isChatLoading = false)
+                }
+            }
+        }
+    }
+
+    fun sendMessage(peerId: Int, text: String) {
+        viewModelScope.launch {
+            _isSending.value = true
+            when (val r = repository.sendMessage(peerId, text)) {
+                is VKResult.Success -> {
+                    loadMessages(peerId)
+                }
+                is VKResult.Error -> {}
+            }
+            _isSending.value = false
         }
     }
 }

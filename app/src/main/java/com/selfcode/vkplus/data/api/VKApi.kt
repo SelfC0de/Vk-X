@@ -50,6 +50,23 @@ interface VKApi {
         @Query("v") version: String = "5.199"
     ): VKResponse<VKConversationsResponse>
 
+    @GET("messages.getHistory")
+    suspend fun getHistory(
+        @Query("peer_id") peerId: Int,
+        @Query("count") count: Int = 50,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<VKHistoryResponse>
+
+    @GET("messages.send")
+    suspend fun sendMessage(
+        @Query("peer_id") peerId: Int,
+        @Query("message") message: String,
+        @Query("random_id") randomId: Long = System.currentTimeMillis(),
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<Int>
+
     @GET("likes.add")
     suspend fun addLike(
         @Query("type") type: String = "post",
@@ -67,6 +84,18 @@ interface VKApi {
         @Query("access_token") token: String,
         @Query("v") version: String = "5.199"
     ): VKResponse<VKLikeResult>
+
+    @GET("auth.getAuthCode")
+    suspend fun getQrCode(
+        @Query("client_id") clientId: Int,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<VKQrCodeResponse>
+
+    @GET("auth.checkAuthCode")
+    suspend fun checkQrCode(
+        @Query("auth_hash") authHash: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<VKQrCheckResponse>
 }
 
 data class VKNewsfeedResponse(
@@ -88,6 +117,22 @@ data class VKConversationsResponse(
     @com.google.gson.annotations.SerializedName("profiles") val profiles: List<VKUser>? = null
 )
 
+data class VKHistoryResponse(
+    @com.google.gson.annotations.SerializedName("count") val count: Int,
+    @com.google.gson.annotations.SerializedName("items") val items: List<VKMessage>
+)
+
 data class VKLikeResult(
     @com.google.gson.annotations.SerializedName("likes") val likes: Int
+)
+
+data class VKQrCodeResponse(
+    @com.google.gson.annotations.SerializedName("auth_hash") val authHash: String,
+    @com.google.gson.annotations.SerializedName("url") val url: String? = null
+)
+
+data class VKQrCheckResponse(
+    @com.google.gson.annotations.SerializedName("status") val status: Int,
+    @com.google.gson.annotations.SerializedName("access_token") val accessToken: String? = null,
+    @com.google.gson.annotations.SerializedName("user_id") val userId: Int? = null
 )

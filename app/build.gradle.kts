@@ -75,4 +75,6 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.accompanist.systemuicontroller)
     debugImplementation(libs.androidx.ui.tooling)
+    implementation(libs.zxing)
+    implementation(libs.zxing.android)
 }

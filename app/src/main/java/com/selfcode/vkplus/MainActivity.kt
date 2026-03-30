@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.compose.runtime.*
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.selfcode.vkplus.auth.AuthState
@@ -21,7 +20,6 @@ import com.selfcode.vkplus.ui.screens.messages.MessagesScreen
 import com.selfcode.vkplus.ui.screens.profile.ProfileScreen
 import com.selfcode.vkplus.ui.theme.VKPlusTheme
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -41,9 +39,13 @@ class MainActivity : ComponentActivity() {
                 when (authState) {
                     is AuthState.Checking -> {}
                     is AuthState.Unauthenticated -> {
-                        AuthScreen(onTokenReceived = { uri ->
-                            authViewModel.handleRedirectUri(uri)
-                        })
+                        AuthScreen(
+                            onTokenReceived = { uri -> authViewModel.handleRedirectUri(uri) },
+                            onQrAuthenticated = { authViewModel.checkToken() },
+                            onManualToken = { token, userId ->
+                                authViewModel.saveManualToken(token, userId)
+                            }
+                        )
                     }
                     is AuthState.Authenticated -> {
                         AuthenticatedApp(

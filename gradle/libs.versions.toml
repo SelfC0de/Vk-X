@@ -44,6 +44,9 @@ kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 accompanist-systemuicontroller = { group = "com.google.accompanist", name = "accompanist-systemuicontroller", version.ref = "accompanist" }
 
+zxing = { group = "com.google.zxing", name = "core", version = "3.5.3" }
+zxing-android = { group = "com.journeyapps", name = "zxing-android-embedded", version = "4.3.0" }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

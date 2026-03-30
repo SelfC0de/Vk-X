@@ -19,11 +19,9 @@ class AuthViewModel @Inject constructor(
     private val _authState = MutableStateFlow<AuthState>(AuthState.Checking)
     val authState: StateFlow<AuthState> = _authState
 
-    init {
-        checkToken()
-    }
+    init { checkToken() }
 
-    private fun checkToken() {
+    fun checkToken() {
         viewModelScope.launch {
             val token = tokenStorage.accessToken.first()
             _authState.value = if (!token.isNullOrEmpty()) {
@@ -42,7 +40,13 @@ class AuthViewModel @Inject constructor(
         }
         val token = params["access_token"] ?: return
         val userId = params["user_id"]?.toIntOrNull() ?: return
+        viewModelScope.launch {
+            tokenStorage.saveToken(token, userId)
+            _authState.value = AuthState.Authenticated
+        }
+    }
 
+    fun saveManualToken(token: String, userId: Int) {
         viewModelScope.launch {
             tokenStorage.saveToken(token, userId)
             _authState.value = AuthState.Authenticated
