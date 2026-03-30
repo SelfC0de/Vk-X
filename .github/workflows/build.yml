@@ -1,0 +1,47 @@
+name: Build VK+
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: 'Version (e.g. 1.0.1)'
+        required: true
+        default: '1.0.0'
+      notes:
+        description: 'Release notes'
+        required: false
+        default: 'Pre-release'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - uses: gradle/actions/setup-gradle@v3
+
+      - run: chmod +x ./gradlew
+
+      - name: Build APK
+        run: ./gradlew assembleRelease
+
+      - name: Rename APK
+        run: |
+          mv app/build/outputs/apk/release/*.apk \
+             app/build/outputs/apk/release/VKPlus-v${{ github.event.inputs.version_name }}.apk
+
+      - name: Publish Pre-Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.event.inputs.version_name }}
+          name: VK+ v${{ github.event.inputs.version_name }}
+          body: ${{ github.event.inputs.notes }}
+          prerelease: true
+          files: app/build/outputs/apk/release/VKPlus-v${{ github.event.inputs.version_name }}.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

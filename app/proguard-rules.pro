@@ -1,0 +1,6 @@
+-keep class com.selfcode.vkplus.data.model.** { *; }
+-keep class com.selfcode.vkplus.data.api.** { *; }
+-keepattributes Signature
+-keepattributes *Annotation*
+-dontwarn okhttp3.**
+-dontwarn retrofit2.**
