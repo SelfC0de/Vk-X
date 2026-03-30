@@ -74,7 +74,8 @@ data class VKAttachment(
     @SerializedName("type") val type: String,
     @SerializedName("photo") val photo: VKPhoto? = null,
     @SerializedName("video") val video: VKVideo? = null,
-    @SerializedName("link") val link: VKLink? = null
+    @SerializedName("link") val link: VKLink? = null,
+    @SerializedName("audio_message") val audioMessage: VKAudioMessage? = null
 )
 
 data class VKPhoto(
@@ -133,7 +134,18 @@ data class VKMessage(
     @SerializedName("from_id") val fromId: Int,
     @SerializedName("text") val text: String,
     @SerializedName("date") val date: Long,
-    @SerializedName("out") val out: Int = 0
+    @SerializedName("out") val out: Int = 0,
+    @SerializedName("attachments") val attachments: List<VKAttachment>? = null
 ) {
     val isOutgoing get() = out == 1
+    val voiceMessage get() = attachments?.firstOrNull { it.type == "audio_message" }?.audioMessage
 }
+
+data class VKAudioMessage(
+    @SerializedName("id") val id: Int,
+    @SerializedName("owner_id") val ownerId: Int,
+    @SerializedName("duration") val duration: Int = 0,
+    @SerializedName("link_mp3") val linkMp3: String? = null,
+    @SerializedName("link_ogg") val linkOgg: String? = null,
+    @SerializedName("was_listened") val wasListened: Boolean = false
+)

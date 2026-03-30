@@ -2,6 +2,7 @@ package com.selfcode.vkplus.ui.screens.tools
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.selfcode.vkplus.data.api.VKGift
 import com.selfcode.vkplus.data.model.VKUser
 import com.selfcode.vkplus.data.repository.VKRepository
 import com.selfcode.vkplus.data.repository.VKResult
@@ -12,7 +13,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+data class GiftInfo(val gift: VKGift, val realSenderId: Int)
+
 data class ToolsUiState(
+    val doxxedGifts: List<GiftInfo> = emptyList(),
+    val isLoadingGifts: Boolean = false,
+    val giftScanDone: Boolean = false,
     val bannedFriends: List<VKUser> = emptyList(),
     val isScanning: Boolean = false,
     val isRemoving: Boolean = false,
@@ -64,6 +70,27 @@ class ToolsViewModel @Inject constructor(
                 bannedFriends = emptyList(),
                 scanDone = true
             )
+        }
+    }
+
+    fun scanGifts() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoadingGifts = true, giftScanDone = false)
+            when (val r = repository.getGifts()) {
+                is VKResult.Success -> {
+                    val doxxed = r.data.items
+                        .filter { it.hasRealSender }
+                        .map { GiftInfo(it, it.fromId!!) }
+                    _uiState.value = _uiState.value.copy(
+                        doxxedGifts = doxxed,
+                        isLoadingGifts = false,
+                        giftScanDone = true
+                    )
+                }
+                is VKResult.Error -> _uiState.value = _uiState.value.copy(
+                    isLoadingGifts = false, giftScanDone = true
+                )
+            }
         }
     }
 

@@ -84,6 +84,12 @@ class VKRepository @Inject constructor(
         VKResult.Success(1)
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
 
+    suspend fun getGifts(userId: Int? = null): VKResult<com.selfcode.vkplus.data.api.VKGiftsResponse> = runCatching {
+        val resp = api.getGifts(userId = userId, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response ?: return VKResult.Error("Empty response"))
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
     suspend fun setOffline(): VKResult<Int> = runCatching {
         val resp = api.setOffline(token = token())
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)

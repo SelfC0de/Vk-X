@@ -3,7 +3,6 @@ package com.selfcode.vkplus.ui.screens.tools
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -15,13 +14,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.selfcode.vkplus.ui.screens.settings.SettingsSection
 import com.selfcode.vkplus.ui.screens.settings.SettingsDivider
+import com.selfcode.vkplus.ui.screens.settings.SettingsSection
 import com.selfcode.vkplus.ui.theme.*
 
 @Composable
@@ -32,17 +30,9 @@ fun ToolsScreen(viewModel: ToolsViewModel = hiltViewModel()) {
         modifier = Modifier.fillMaxSize().background(Background).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        item {
-            SettingsSection("🧹 Управление друзьями") {
-                RemoveBannedCard(state, viewModel)
-            }
-        }
-
-        item {
-            SettingsSection("🔓 Bypass") {
-                BypassCard()
-            }
-        }
+        item { SettingsSection("🧹 Управление друзьями") { RemoveBannedCard(state, viewModel) } }
+        item { SettingsSection("🎁 Bypass Gift Anonymity") { GiftAnonymityCard(state, viewModel) } }
+        item { SettingsSection("🔓 Bypass") { BypassInfoCard() } }
     }
 }
 
@@ -50,158 +40,166 @@ fun ToolsScreen(viewModel: ToolsViewModel = hiltViewModel()) {
 private fun RemoveBannedCard(state: ToolsUiState, vm: ToolsViewModel) {
     Column(modifier = Modifier.padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.PersonRemove, contentDescription = null, tint = ErrorRed, modifier = Modifier.size(22.dp))
+            Icon(Icons.Default.PersonRemove, null, tint = ErrorRed, modifier = Modifier.size(22.dp))
             Spacer(Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text("Remove Banned Users", color = OnSurface, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                Text("Удалить удалённые/заблокированные аккаунты из друзей", color = OnSurfaceMuted, fontSize = 12.sp, lineHeight = 16.sp)
+                Text("Удалить удалённые/заблокированные аккаунты", color = OnSurfaceMuted, fontSize = 12.sp)
             }
         }
-
         Spacer(Modifier.height(12.dp))
-
         when {
-            state.isScanning -> {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator(color = CyberBlue, modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                    Spacer(Modifier.width(10.dp))
-                    Text("Сканирование списка друзей...", color = OnSurfaceMuted, fontSize = 13.sp)
-                }
-            }
-            state.isRemoving -> {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator(color = ErrorRed, modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                    Spacer(Modifier.width(10.dp))
-                    Text("Удаляем... ${state.removedCount}/${state.bannedFriends.size + state.removedCount}", color = OnSurfaceMuted, fontSize = 13.sp)
-                }
-            }
+            state.isScanning -> LoadingRow("Сканирование списка друзей...", CyberBlue)
+            state.isRemoving -> LoadingRow("Удаляем... ${state.removedCount}/${state.bannedFriends.size + state.removedCount}", ErrorRed)
             state.scanDone && state.bannedFriends.isEmpty() && state.removedCount == 0 -> {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = CyberAccent, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Список чист — «собачек» не найдено", color = CyberAccent, fontSize = 13.sp)
-                }
+                SuccessRow("Список чист — «собачек» не найдено")
                 Spacer(Modifier.height(8.dp))
                 OutlinedButton(onClick = { vm.reset() }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
                     Text("Сканировать снова", color = CyberBlue)
                 }
             }
             state.scanDone && state.removedCount > 0 && state.bannedFriends.isEmpty() -> {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = CyberAccent, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Удалено ${state.removedCount} аккаунтов", color = CyberAccent, fontSize = 13.sp)
-                }
+                SuccessRow("Удалено ${state.removedCount} аккаунтов")
                 Spacer(Modifier.height(8.dp))
                 OutlinedButton(onClick = { vm.reset() }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
                     Text("Сканировать снова", color = CyberBlue)
                 }
             }
             state.bannedFriends.isNotEmpty() -> {
-                Text(
-                    text = "Найдено ${state.bannedFriends.size} удалённых аккаунтов:",
-                    color = ErrorRed,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
+                Text("Найдено ${state.bannedFriends.size} удалённых:", color = ErrorRed, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(8.dp))
                 state.bannedFriends.take(5).forEach { user ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    ) {
-                        AsyncImage(
-                            model = user.photo100,
-                            contentDescription = null,
-                            modifier = Modifier.size(32.dp).clip(CircleShape).background(SurfaceVariant),
-                            contentScale = ContentScale.Crop
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
+                        AsyncImage(model = user.photo100, contentDescription = null,
+                            modifier = Modifier.size(32.dp).clip(CircleShape).background(SurfaceVariant), contentScale = ContentScale.Crop)
                         Spacer(Modifier.width(8.dp))
                         Column {
                             Text(user.fullName, color = OnSurfaceMuted, fontSize = 13.sp)
-                            Text(
-                                text = if (user.deactivated == "banned") "заблокирован ВК" else "удалён",
-                                color = ErrorRed,
-                                fontSize = 11.sp
-                            )
+                            Text(if (user.deactivated == "banned") "заблокирован ВК" else "удалён", color = ErrorRed, fontSize = 11.sp)
                         }
                     }
                 }
-                if (state.bannedFriends.size > 5) {
-                    Text("...и ещё ${state.bannedFriends.size - 5}", color = OnSurfaceMuted, fontSize = 12.sp)
-                }
+                if (state.bannedFriends.size > 5) Text("...и ещё ${state.bannedFriends.size - 5}", color = OnSurfaceMuted, fontSize = 12.sp)
                 Spacer(Modifier.height(12.dp))
-                Button(
-                    onClick = { vm.removeAllBanned() },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = ErrorRed),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Icon(Icons.Default.DeleteForever, contentDescription = null, modifier = Modifier.size(18.dp))
+                Button(onClick = { vm.removeAllBanned() }, modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = ErrorRed), shape = RoundedCornerShape(8.dp)) {
+                    Icon(Icons.Default.DeleteForever, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
                     Text("Удалить всех (${state.bannedFriends.size})", color = OnSurface)
                 }
             }
             else -> {
-                Button(
-                    onClick = { vm.scanBannedFriends() },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = SurfaceVariant),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Icon(Icons.Default.Search, contentDescription = null, tint = CyberBlue, modifier = Modifier.size(18.dp))
+                Button(onClick = { vm.scanBannedFriends() }, modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = SurfaceVariant), shape = RoundedCornerShape(8.dp)) {
+                    Icon(Icons.Default.Search, null, tint = CyberBlue, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
                     Text("Сканировать", color = CyberBlue)
                 }
             }
         }
+        if (state.error != null) { Spacer(Modifier.height(8.dp)); Text(state.error!!, color = ErrorRed, fontSize = 12.sp) }
+    }
+}
 
-        if (state.error != null) {
-            Spacer(Modifier.height(8.dp))
-            Text(state.error!!, color = ErrorRed, fontSize = 12.sp)
+@Composable
+private fun GiftAnonymityCard(state: ToolsUiState, vm: ToolsViewModel) {
+    Column(modifier = Modifier.padding(16.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.CardGiftcard, null, tint = CyberAccent, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Bypass Gift Anonymity", color = OnSurface, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text("Деанон отправителя анонимного подарка через API", color = OnSurfaceMuted, fontSize = 12.sp)
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        when {
+            state.isLoadingGifts -> LoadingRow("Запрашиваем подарки...", CyberBlue)
+            state.giftScanDone && state.doxxedGifts.isEmpty() -> {
+                SuccessRow("Анонимных подарков с раскрытым ID не найдено")
+            }
+            state.doxxedGifts.isNotEmpty() -> {
+                Text("🎯 Найдено ${state.doxxedGifts.size} раскрытых отправителей:", color = CyberAccent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(8.dp))
+                state.doxxedGifts.forEach { info ->
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
+                        AsyncImage(model = info.gift.gift?.thumb256, contentDescription = null,
+                            modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)).background(SurfaceVariant), contentScale = ContentScale.Crop)
+                        Spacer(Modifier.width(10.dp))
+                        Column {
+                            Text("ID отправителя: ${info.realSenderId}", color = CyberAccent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                            Text("vk.com/id${info.realSenderId}", color = OnSurfaceMuted, fontSize = 11.sp)
+                        }
+                    }
+                }
+            }
+            else -> {
+                Button(onClick = { vm.scanGifts() }, modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = SurfaceVariant), shape = RoundedCornerShape(8.dp)) {
+                    Icon(Icons.Default.Search, null, tint = CyberAccent, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Сканировать подарки", color = CyberAccent)
+                }
+                Spacer(Modifier.height(6.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Info, null, tint = OnSurfaceMuted, modifier = Modifier.size(13.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Работает только если API вернул from_id в ответе (старые подарки)", color = OnSurfaceMuted, fontSize = 11.sp, lineHeight = 15.sp)
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun BypassCard() {
+private fun BypassInfoCard() {
     Column(modifier = Modifier.padding(vertical = 4.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(Icons.Default.ContentCopy, contentDescription = null, tint = CyberBlue, modifier = Modifier.size(22.dp))
+        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.ContentCopy, null, tint = CyberBlue, modifier = Modifier.size(22.dp))
             Spacer(Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text("Bypass Copy + Reposts", color = OnSurface, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                Text("Копировать и пересылать из закрытых чатов", color = OnSurfaceMuted, fontSize = 12.sp)
+                Text("Долгое нажатие на любое сообщение копирует текст", color = OnSurfaceMuted, fontSize = 12.sp)
             }
-            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = CyberAccent, modifier = Modifier.size(18.dp))
+            Icon(Icons.Default.CheckCircle, null, tint = CyberAccent, modifier = Modifier.size(18.dp))
         }
         SettingsDivider()
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(Icons.Default.HowToVote, contentDescription = null, tint = CyberBlue, modifier = Modifier.size(22.dp))
+        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.HowToVote, null, tint = CyberBlue, modifier = Modifier.size(22.dp))
             Spacer(Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text("Read Receipts", color = OnSurface, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                Text("Голосование в анонимных опросах без отображения имени", color = OnSurfaceMuted, fontSize = 12.sp, lineHeight = 16.sp)
+                Text("Голосование в анонимных опросах без отображения имени", color = OnSurfaceMuted, fontSize = 12.sp)
             }
-            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = CyberAccent, modifier = Modifier.size(18.dp))
+            Icon(Icons.Default.CheckCircle, null, tint = CyberAccent, modifier = Modifier.size(18.dp))
         }
-        Spacer(Modifier.height(4.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(Icons.Default.Info, contentDescription = null, tint = OnSurfaceMuted, modifier = Modifier.size(14.dp))
-            Spacer(Modifier.width(6.dp))
-            Text(
-                "Bypass функции применяются автоматически — ничего включать не нужно.",
-                color = OnSurfaceMuted, fontSize = 11.sp, lineHeight = 15.sp
-            )
+        SettingsDivider()
+        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.Mic, null, tint = CyberBlue, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.width(14.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Silent VM Listener", color = OnSurface, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text("Воспроизведение ГС без markAsListened — метка не улетает", color = OnSurfaceMuted, fontSize = 12.sp)
+            }
+            Icon(Icons.Default.CheckCircle, null, tint = CyberAccent, modifier = Modifier.size(18.dp))
         }
+    }
+}
+
+@Composable
+private fun LoadingRow(text: String, color: androidx.compose.ui.graphics.Color) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        CircularProgressIndicator(color = color, modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+        Spacer(Modifier.width(10.dp))
+        Text(text, color = OnSurfaceMuted, fontSize = 13.sp)
+    }
+}
+
+@Composable
+private fun SuccessRow(text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(Icons.Default.CheckCircle, null, tint = CyberAccent, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(text, color = CyberAccent, fontSize = 13.sp)
     }
 }

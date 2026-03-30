@@ -97,6 +97,19 @@ private fun EngineTab(state: SettingsUiState, vm: SettingsViewModel) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        SettingsSection("🎙 Silent VM Listener") {
+            SettingsToggle(Icons.Default.Mic, "Silent VM Listener",
+                "Слушать ГС без отправки markAsListened — метка не улетает", state.silentVm, vm::setSilentVm)
+        }
+
+        SettingsSection("🔄 Anti-Ban Engine") {
+            SettingsToggle(Icons.Default.Autorenew, "Anti-Ban Engine",
+                "Авторотация client_id при капче/rate limit", state.antiBan, vm::setAntiBan)
+            SettingsDivider()
+            SettingsToggle(Icons.Default.CloudOff, "Offline Post",
+                "Публиковать/отправлять без триггера account.setOnline", state.offlinePost, vm::setOfflinePost)
+        }
+
         SettingsSection("⌨️ Type Status Changer") {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Text(

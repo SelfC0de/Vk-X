@@ -26,6 +26,9 @@ data class SettingsUiState(
     val typePush: Boolean      = false,
     val ghostStory: Boolean    = false,
     val typeStatus: String     = com.selfcode.vkplus.data.local.TypeStatus.NONE.value,
+    val silentVm: Boolean      = false,
+    val offlinePost: Boolean   = false,
+    val antiBan: Boolean       = false,
     val deviceUa: String       = DeviceProfile.KATE.ua
 )
 
@@ -45,6 +48,9 @@ class SettingsViewModel @Inject constructor(
         settingsStore.typePush,
         settingsStore.ghostStory,
         settingsStore.typeStatus,
+        settingsStore.silentVm,
+        settingsStore.offlinePost,
+        settingsStore.antiBan,
         settingsStore.deviceUa
     ) { arr ->
         SettingsUiState(
@@ -57,7 +63,10 @@ class SettingsViewModel @Inject constructor(
             typePush       = arr[6] as Boolean,
             ghostStory     = arr[7] as Boolean,
             typeStatus     = arr[8] as String,
-            deviceUa       = arr[9] as String
+            silentVm       = arr[9] as Boolean,
+            offlinePost    = arr[10] as Boolean,
+            antiBan        = arr[11] as Boolean,
+            deviceUa       = arr[12] as String
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
 
@@ -69,6 +78,9 @@ class SettingsViewModel @Inject constructor(
     fun setTypePush(v: Boolean)      = viewModelScope.launch { settingsStore.setTypePush(v) }
     fun setGhostStory(v: Boolean)    = viewModelScope.launch { settingsStore.setGhostStory(v) }
     fun setTypeStatus(v: String)     = viewModelScope.launch { settingsStore.setTypeStatus(v) }
+    fun setSilentVm(v: Boolean)      = viewModelScope.launch { settingsStore.setSilentVm(v) }
+    fun setOfflinePost(v: Boolean)   = viewModelScope.launch { settingsStore.setOfflinePost(v) }
+    fun setAntiBan(v: Boolean)       = viewModelScope.launch { settingsStore.setAntiBan(v) }
 
     fun setForceOffline(v: Boolean) = viewModelScope.launch {
         settingsStore.setForceOffline(v)

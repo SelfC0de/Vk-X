@@ -31,6 +31,9 @@ class SettingsStore @Inject constructor(
         val KEY_BYPASS_COPY      = booleanPreferencesKey("bypass_copy")
         val KEY_GHOST_STORY      = booleanPreferencesKey("ghost_story")
         val KEY_TYPE_STATUS      = stringPreferencesKey("type_status")
+        val KEY_SILENT_VM        = booleanPreferencesKey("silent_vm")
+        val KEY_OFFLINE_POST     = booleanPreferencesKey("offline_post")
+        val KEY_ANTI_BAN         = booleanPreferencesKey("anti_ban")
     }
 
     val unRead:       Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_UNREAD]        ?: false }
@@ -44,6 +47,9 @@ class SettingsStore @Inject constructor(
     val bypassCopy:   Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_BYPASS_COPY]   ?: true }
     val ghostStory:   Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_GHOST_STORY]   ?: false }
     val typeStatus:   Flow<String>  = context.settingsDataStore.data.map { it[KEY_TYPE_STATUS]   ?: TypeStatus.NONE.value }
+    val silentVm:     Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_SILENT_VM]     ?: false }
+    val offlinePost:  Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_OFFLINE_POST]  ?: false }
+    val antiBan:      Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_ANTI_BAN]      ?: false }
 
     suspend fun setUnRead(v: Boolean)        = context.settingsDataStore.edit { it[KEY_UNREAD]        = v }
     suspend fun setUnType(v: Boolean)        = context.settingsDataStore.edit { it[KEY_UNTYPE]        = v }
@@ -56,6 +62,9 @@ class SettingsStore @Inject constructor(
     suspend fun setBypassCopy(v: Boolean)    = context.settingsDataStore.edit { it[KEY_BYPASS_COPY]   = v }
     suspend fun setGhostStory(v: Boolean)    = context.settingsDataStore.edit { it[KEY_GHOST_STORY]   = v }
     suspend fun setTypeStatus(v: String)     = context.settingsDataStore.edit { it[KEY_TYPE_STATUS]   = v }
+    suspend fun setSilentVm(v: Boolean)      = context.settingsDataStore.edit { it[KEY_SILENT_VM]     = v }
+    suspend fun setOfflinePost(v: Boolean)   = context.settingsDataStore.edit { it[KEY_OFFLINE_POST]  = v }
+    suspend fun setAntiBan(v: Boolean)       = context.settingsDataStore.edit { it[KEY_ANTI_BAN]      = v }
 }
 
 enum class DeviceProfile(val label: String, val ua: String) {

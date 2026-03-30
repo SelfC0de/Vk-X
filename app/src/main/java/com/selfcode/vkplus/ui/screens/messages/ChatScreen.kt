@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
+import com.selfcode.vkplus.data.model.VKAudioMessage
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -167,6 +168,10 @@ fun MessageBubble(message: VKMessage) {
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
             Column {
+                message.voiceMessage?.let { voice ->
+                    VoiceMessagePlayer(audio = voice, isOutgoing = isOut)
+                    Spacer(Modifier.height(4.dp))
+                }
                 if (message.text.isNotBlank()) {
                     Text(
                         text = message.text,

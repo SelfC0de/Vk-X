@@ -100,6 +100,29 @@ interface VKApi {
         @Query("v") version: String = "5.199"
     ): VKResponse<VKDeleteFriendResult>
 
+    @GET("messages.markAsListened")
+    suspend fun markAsListened(
+        @Query("message_id") messageId: Int,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<Int>
+
+    @GET("gifts.get")
+    suspend fun getGifts(
+        @Query("user_id") userId: Int? = null,
+        @Query("count") count: Int = 100,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<VKGiftsResponse>
+
+    @GET("wall.post")
+    suspend fun wallPost(
+        @Query("owner_id") ownerId: Int? = null,
+        @Query("message") message: String,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<VKWallPostResult>
+
     @GET("auth.getAuthCode")
     suspend fun getQrCode(
         @Query("client_id") clientId: Int,
@@ -160,4 +183,30 @@ data class VKQrCheckResponse(
 
 data class VKDeleteFriendResult(
     @com.google.gson.annotations.SerializedName("success") val success: Int = 0
+)
+
+data class VKGiftsResponse(
+    @com.google.gson.annotations.SerializedName("count") val count: Int,
+    @com.google.gson.annotations.SerializedName("items") val items: List<VKGift>
+)
+
+data class VKGift(
+    @com.google.gson.annotations.SerializedName("id") val id: Int,
+    @com.google.gson.annotations.SerializedName("from_id") val fromId: Int? = null,
+    @com.google.gson.annotations.SerializedName("message") val message: String? = null,
+    @com.google.gson.annotations.SerializedName("date") val date: Long = 0,
+    @com.google.gson.annotations.SerializedName("gift") val gift: VKGiftItem? = null,
+    @com.google.gson.annotations.SerializedName("privacy") val privacy: Int = 0
+) {
+    val isAnonymous get() = privacy == 1
+    val hasRealSender get() = fromId != null && fromId != 0 && isAnonymous
+}
+
+data class VKGiftItem(
+    @com.google.gson.annotations.SerializedName("id") val id: Int,
+    @com.google.gson.annotations.SerializedName("thumb_256") val thumb256: String? = null
+)
+
+data class VKWallPostResult(
+    @com.google.gson.annotations.SerializedName("post_id") val postId: Int
 )
