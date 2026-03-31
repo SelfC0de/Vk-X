@@ -46,6 +46,7 @@ class PrivacyInterceptor @Inject constructor(
         val typeStatus    = runBlocking { settingsStore.typeStatus.first() }
         val silentVm      = runBlocking { settingsStore.silentVm.first() }
         val antiBan       = runBlocking { settingsStore.antiBan.first() }
+        val hardwareSpoof  = runBlocking { settingsStore.hardwareSpoof.first() }
         val deviceUa      = runBlocking { settingsStore.deviceUa.first() }
 
         if (antiTelemetry) {
