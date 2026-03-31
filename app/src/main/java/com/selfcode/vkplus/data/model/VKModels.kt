@@ -181,5 +181,5 @@ data class VKConversationsResponse(
     @SerializedName("count") val count: Int = 0,
     @SerializedName("items") val items: List<VKDialog> = emptyList(),
     @SerializedName("profiles") val profiles: List<VKUser>? = null,
-    @SerializedName("groups") val groups: List<VKGroup>? = null
+    @SerializedName("groups") val groups: List<com.selfcode.vkplus.data.api.VKGroup>? = null
 )
