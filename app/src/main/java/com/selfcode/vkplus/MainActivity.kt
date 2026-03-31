@@ -16,6 +16,7 @@ import com.selfcode.vkplus.data.repository.VKResult
 import com.selfcode.vkplus.ui.components.MainScaffold
 import com.selfcode.vkplus.ui.navigation.Screen
 import com.selfcode.vkplus.ui.screens.AuthScreen
+import com.selfcode.vkplus.ui.screens.SplashScreen
 import com.selfcode.vkplus.ui.screens.feed.FeedScreen
 import com.selfcode.vkplus.ui.screens.friends.FriendsScreen
 import com.selfcode.vkplus.ui.screens.messages.MessagesScreen
@@ -36,38 +37,47 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         val antiScreen = runBlocking { settingsStore.antiScreen.first() }
         applySecureFlag(antiScreen)
-
         enableEdgeToEdge()
+
         setContent {
             VKPlusTheme {
                 val authViewModel: AuthViewModel = hiltViewModel()
                 val authState by authViewModel.authState.collectAsState()
 
-                when (authState) {
-                    is AuthState.Checking -> {}
-                    is AuthState.Unauthenticated -> {
+                // Show splash only before first auth screen
+                var splashDone by remember { mutableStateOf(authState is AuthState.Authenticated) }
+
+                when {
+                    authState is AuthState.Checking -> {}
+
+                    authState is AuthState.Authenticated -> {
+                        AuthenticatedApp(
+                            repository = repository,
+                            onLogout = { authViewModel.logout() },
+                            onAntiScreenChanged = { applySecureFlag(it) }
+                        )
+                    }
+
+                    !splashDone -> {
+                        SplashScreen(onFinished = { splashDone = true })
+                    }
+
+                    authState is AuthState.Unauthenticated -> {
                         AuthScreen(
                             onTokenReceived = { uri -> authViewModel.handleRedirectUri(uri) },
                             onQrAuthenticated = { authViewModel.checkToken() },
                             onManualToken = { token -> authViewModel.saveManualToken(token) }
                         )
                     }
-                    is AuthState.InvalidToken -> {
+
+                    authState is AuthState.InvalidToken -> {
                         AuthScreen(
                             onTokenReceived = { uri -> authViewModel.handleRedirectUri(uri) },
                             onQrAuthenticated = { authViewModel.checkToken() },
                             onManualToken = { token -> authViewModel.saveManualToken(token) },
                             invalidToken = true
-                        )
-                    }
-                    is AuthState.Authenticated -> {
-                        AuthenticatedApp(
-                            repository = repository,
-                            onLogout = { authViewModel.logout() },
-                            onAntiScreenChanged = { applySecureFlag(it) }
                         )
                     }
                 }
@@ -76,20 +86,13 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun applySecureFlag(enabled: Boolean) {
-        if (enabled) {
-            window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        } else {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        }
+        if (enabled) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
     }
 }
 
 @Composable
-fun AuthenticatedApp(
-    repository: VKRepository,
-    onLogout: () -> Unit,
-    onAntiScreenChanged: (Boolean) -> Unit
-) {
+fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScreenChanged: (Boolean) -> Unit) {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Feed) }
     var currentUser by remember { mutableStateOf<VKUser?>(null) }
 
@@ -100,11 +103,7 @@ fun AuthenticatedApp(
         }
     }
 
-    MainScaffold(
-        currentScreen = currentScreen,
-        user = currentUser,
-        onNavigate = { currentScreen = it }
-    ) {
+    MainScaffold(currentScreen = currentScreen, user = currentUser, onNavigate = { currentScreen = it }) {
         when (currentScreen) {
             Screen.Feed -> FeedScreen()
             Screen.Messages -> MessagesScreen()
