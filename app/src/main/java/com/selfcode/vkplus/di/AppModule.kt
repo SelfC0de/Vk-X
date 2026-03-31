@@ -50,4 +50,9 @@ object AppModule {
     @Singleton
     fun provideWorkManager(@ApplicationContext context: Context): WorkManager =
         WorkManager.getInstance(context)
+
+    @Provides
+    @Singleton
+    fun provideTranslateUseCase(repository: VKRepository): TranslateUseCase =
+        TranslateUseCase(repository)
 }

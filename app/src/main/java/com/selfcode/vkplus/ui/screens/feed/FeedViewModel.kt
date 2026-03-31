@@ -29,33 +29,45 @@ class FeedViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FeedUiState(isLoading = true))
+    private val _isRefreshing = kotlinx.coroutines.flow.MutableStateFlow(false)
+    val isRefreshing: kotlinx.coroutines.flow.StateFlow<Boolean> = _isRefreshing
     val uiState: StateFlow<FeedUiState> = _uiState
 
     init {
         loadFeed()
     }
 
-    fun loadFeed() {
+    fun refresh() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            when (val result = repository.getNewsfeed()) {
-                is VKResult.Success -> {
-                    val profilesMap = result.data.profiles.associateBy { it.id }
-                    val groupsMap = result.data.groups.associateBy { it.id }
-                    _uiState.value = FeedUiState(
-                        posts = result.data.items,
-                        profiles = profilesMap,
-                        groups = groupsMap,
-                        nextFrom = result.data.nextFrom,
-                        isLoading = false
-                    )
-                }
-                is VKResult.Error -> {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = result.message
-                    )
-                }
+            _isRefreshing.value = true
+            loadFeedInternal()
+            _isRefreshing.value = false
+        }
+    }
+
+    fun loadFeed() {
+        viewModelScope.launch { loadFeedInternal() }
+    }
+
+    private suspend fun loadFeedInternal() {
+        _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+        when (val result = repository.getNewsfeed()) {
+            is VKResult.Success -> {
+                val profilesMap = result.data.profiles.associateBy { it.id }
+                val groupsMap = result.data.groups.associateBy { it.id }
+                _uiState.value = FeedUiState(
+                    posts = result.data.items,
+                    profiles = profilesMap,
+                    groups = groupsMap,
+                    nextFrom = result.data.nextFrom,
+                    isLoading = false
+                )
+            }
+            is VKResult.Error -> {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = result.message
+                )
             }
         }
     }

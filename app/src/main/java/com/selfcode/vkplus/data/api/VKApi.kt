@@ -204,6 +204,28 @@ interface VKApi {
         @Query("v") version: String = "5.131"
     ): VKResponse<VKStickerKeywordsResponse>
 
+    @GET("translations.translate")
+    suspend fun translateText(
+        @Query("texts") texts: String,
+        @Query("translation_language") lang: String = "ru",
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.131"
+    ): VKResponse<VKTranslateResponse>
+
+    @GET("messages.getLastActivity")
+    suspend fun getLastActivity(
+        @Query("user_id") userId: Int,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<VKLastActivity>
+
+    @GET("messages.restore")
+    suspend fun restoreMessage(
+        @Query("message_id") messageId: Int,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<Int>
+
     @GET("messages.getLongPollServer")
     suspend fun getLongPollServer(
         @Query("lp_version") lpVersion: Int = 3,
@@ -406,4 +428,14 @@ data class VKStickerProductRef(
     @com.google.gson.annotations.SerializedName("id") val id: Int = 0,
     @com.google.gson.annotations.SerializedName("title") val title: String = "",
     @com.google.gson.annotations.SerializedName("type") val type: String = ""
+)
+
+data class VKTranslateResponse(
+    @com.google.gson.annotations.SerializedName("texts") val texts: List<String> = emptyList(),
+    @com.google.gson.annotations.SerializedName("source_lang") val sourceLang: String = ""
+)
+
+data class VKLastActivity(
+    @com.google.gson.annotations.SerializedName("online") val online: Int = 0,
+    @com.google.gson.annotations.SerializedName("time") val time: Long = 0
 )

@@ -210,6 +210,25 @@ class VKRepository @Inject constructor(
         VKResult.Success(result)
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
 
+    suspend fun translateTexts(texts: List<String>, targetLang: String = "ru"): VKResult<List<String>> = runCatching {
+        val textsParam = texts.joinToString(",")
+        val resp = api.translateText(texts = textsParam, lang = targetLang, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response?.texts ?: texts)
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun getLastActivity(userId: Int): VKResult<com.selfcode.vkplus.data.api.VKLastActivity> = runCatching {
+        val resp = api.getLastActivity(userId = userId, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response ?: com.selfcode.vkplus.data.api.VKLastActivity())
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun restoreMessage(messageId: Int): VKResult<Unit> = runCatching {
+        val resp = api.restoreMessage(messageId = messageId, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(Unit)
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
     suspend fun getBannedFriends(): VKResult<List<com.selfcode.vkplus.data.model.VKUser>> = runCatching {
         val resp = api.getFriendsWithStatus(token = token())
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)

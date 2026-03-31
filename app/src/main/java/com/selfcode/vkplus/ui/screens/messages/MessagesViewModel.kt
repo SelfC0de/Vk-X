@@ -3,6 +3,7 @@ package com.selfcode.vkplus.ui.screens.messages
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.selfcode.vkplus.data.model.VKDialog
+import com.selfcode.vkplus.domain.TranslateUseCase
 import com.selfcode.vkplus.data.model.VKMessage
 import com.selfcode.vkplus.data.model.VKUser
 import com.selfcode.vkplus.data.local.SettingsStore
@@ -27,7 +28,8 @@ data class MessagesUiState(
 @HiltViewModel
 class MessagesViewModel @Inject constructor(
     private val repository: VKRepository,
-    private val settingsStore: SettingsStore
+    private val settingsStore: SettingsStore,
+    private val translateUseCase: TranslateUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MessagesUiState(isLoading = true))
@@ -35,6 +37,15 @@ class MessagesViewModel @Inject constructor(
 
     private val _isSending = MutableStateFlow(false)
     val isSending: StateFlow<Boolean> = _isSending
+
+    private val _translatedMessages = MutableStateFlow<Map<Int, String>>(emptyMap())
+    val translatedMessages: StateFlow<Map<Int, String>> = _translatedMessages
+
+    private val _lastActivity = MutableStateFlow<Map<Int, String>>(emptyMap())
+    val lastActivity: StateFlow<Map<Int, String>> = _lastActivity
+
+    private val _translateLoading = MutableStateFlow<Set<Int>>(emptySet())
+    val translateLoading: StateFlow<Set<Int>> = _translateLoading
 
     init { load() }
 
@@ -105,6 +116,57 @@ class MessagesViewModel @Inject constructor(
                 is VKResult.Error -> {}
             }
             _isSending.value = false
+        }
+    }
+
+    fun translateMessage(messageId: Int, text: String) {
+        viewModelScope.launch {
+            _translateLoading.value = _translateLoading.value + messageId
+            when (val r = translateUseCase.translate(text)) {
+                is VKResult.Success -> {
+                    _translatedMessages.value = _translatedMessages.value + (messageId to r.data)
+                }
+                is VKResult.Error -> {}
+            }
+            _translateLoading.value = _translateLoading.value - messageId
+        }
+    }
+
+    fun clearTranslation(messageId: Int) {
+        _translatedMessages.value = _translatedMessages.value - messageId
+    }
+
+    fun translateInput(text: String, targetLang: String = "en", onResult: (String) -> Unit) {
+        viewModelScope.launch {
+            when (val r = translateUseCase.translate(text, targetLang)) {
+                is VKResult.Success -> onResult(r.data)
+                is VKResult.Error -> {}
+            }
+        }
+    }
+
+    fun loadLastActivity(userId: Int) {
+        viewModelScope.launch {
+            when (val r = repository.getLastActivity(userId)) {
+                is VKResult.Success -> {
+                    val activity = r.data
+                    val timeStr = if (activity.online == 1) "онлайн" else {
+                        val sdf = java.text.SimpleDateFormat("d MMM HH:mm", java.util.Locale("ru"))
+                        sdf.format(java.util.Date(activity.time * 1000))
+                    }
+                    _lastActivity.value = _lastActivity.value + (userId to timeStr)
+                }
+                is VKResult.Error -> {}
+            }
+        }
+    }
+
+    fun restoreMessage(peerId: Int, messageId: Int) {
+        viewModelScope.launch {
+            when (repository.restoreMessage(messageId)) {
+                is VKResult.Success -> loadMessages(peerId)
+                is VKResult.Error -> {}
+            }
         }
     }
 }

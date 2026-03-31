@@ -35,7 +35,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.selfcode.vkplus.data.model.VKPost
 import com.selfcode.vkplus.ui.theme.*
-import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -44,9 +43,8 @@ import java.util.*
 fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
-    var isRefreshing by remember { mutableStateOf(false) }
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
-    // Auto-refresh on launch
     val shouldLoadMore by remember {
         derivedStateOf {
             val last = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
@@ -58,13 +56,7 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
         if (shouldLoadMore && state.nextFrom != null) viewModel.loadMore()
     }
 
-    LaunchedEffect(isRefreshing) {
-        if (isRefreshing) {
-            viewModel.loadFeed()
-            delay(800)
-            isRefreshing = false
-        }
-    }
+
 
     // Spinning icon animation
     val rotation by rememberInfiniteTransition(label = "spin").animateFloat(
@@ -108,7 +100,7 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
 
         // FAB refresh button
         FloatingActionButton(
-            onClick = { if (!isRefreshing) isRefreshing = true },
+            onClick = { if (!isRefreshing) viewModel.refresh() },
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp).size(48.dp),
             containerColor = CyberBlue,
             contentColor = Background,

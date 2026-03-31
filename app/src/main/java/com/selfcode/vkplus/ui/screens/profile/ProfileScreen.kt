@@ -85,15 +85,20 @@ fun ProfileScreen(
             else -> {
                 val u = user!!
                 val profileUrl = "https://vk.com/id${u.id}"
+                // Profile Mirroring — substitute visuals if active
+                val isMirrorActive = exploitsState.mirrorActive && exploitsState.mirroredName.isNotBlank()
+                val displayName   = if (isMirrorActive) exploitsState.mirroredName   else u.fullName
+                val displayPhoto  = if (isMirrorActive) exploitsState.mirroredPhoto.takeIf { it.isNotBlank() } else u.photo200
+                val displayStatus = if (isMirrorActive) exploitsState.mirroredStatus else u.status
 
                 Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                     // Cover
                     Box(modifier = Modifier.fillMaxWidth().height(170.dp)
                         .background(Brush.verticalGradient(listOf(Color(0xFF0A1020), Color(0xFF0D1528), Background)))) {
                         Box(modifier = Modifier.size(90.dp).align(Alignment.BottomStart).offset(x = 20.dp, y = 45.dp)) {
-                            AsyncImage(model = u.photo200, contentDescription = null,
+                            AsyncImage(model = displayPhoto, contentDescription = null,
                                 modifier = Modifier.fillMaxSize().clip(CircleShape)
-                                    .border(3.dp, Brush.linearGradient(listOf(CyberBlue, CyberAccent)), CircleShape),
+                                    .border(3.dp, Brush.linearGradient(listOf(if (isMirrorActive) Color(0xFFFF6B35) else CyberBlue, CyberAccent)), CircleShape),
                                 contentScale = ContentScale.Crop)
                             Box(modifier = Modifier.size(18.dp).align(Alignment.BottomEnd)
                                 .background(Background, CircleShape).padding(3.dp).background(CyberAccent, CircleShape))
@@ -103,18 +108,21 @@ fun ProfileScreen(
                     Spacer(Modifier.height(52.dp))
 
                     Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-                        // Name + fake verification badge
+                        // Name + fake verification badge + mirror indicator
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(u.fullName, color = OnSurface, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                            Text(displayName, color = if (isMirrorActive) Color(0xFFFF6B35) else OnSurface, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                             if (exploitsState.fakeVerification) {
                                 Spacer(Modifier.width(6.dp))
                                 Icon(Icons.Filled.CheckCircle, null, tint = CyberAccent, modifier = Modifier.size(20.dp))
                             }
                         }
 
-                        if (!u.status.isNullOrBlank()) {
+                        if (!displayStatus.isNullOrBlank()) {
                             Spacer(Modifier.height(3.dp))
-                            Text(u.status, color = OnSurfaceMuted, fontSize = 13.sp)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (isMirrorActive) { Text("🎭 ", fontSize = 13.sp); Spacer(Modifier.width(2.dp)) }
+                                Text(displayStatus ?: "", color = OnSurfaceMuted, fontSize = 13.sp)
+                            }
                         }
 
                         Spacer(Modifier.height(4.dp))
