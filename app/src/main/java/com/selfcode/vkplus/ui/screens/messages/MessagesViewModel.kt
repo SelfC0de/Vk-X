@@ -38,6 +38,8 @@ class MessagesViewModel @Inject constructor(
 
     init { load() }
 
+    fun loadConversations() = load()
+
     fun load() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)

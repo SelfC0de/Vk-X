@@ -11,13 +11,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
-import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,7 +34,6 @@ fun FriendsScreen(
     messagesViewModel: MessagesViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
-    val pullState = rememberPullToRefreshState()
     var selectedUserId by remember { mutableStateOf<String?>(null) }
     var chatUserId by remember { mutableStateOf<Int?>(null) }
     var chatUserName by remember { mutableStateOf("") }
@@ -63,64 +59,53 @@ fun FriendsScreen(
         return
     }
 
-    if (pullState.isRefreshing) {
-        LaunchedEffect(Unit) {
-            viewModel.refresh()
-            pullState.endRefresh()
-        }
-    }
+    Column(modifier = Modifier.fillMaxSize().background(Background)) {
+        OutlinedTextField(
+            value = state.query,
+            onValueChange = viewModel::setQuery,
+            placeholder = { Text("Поиск друзей", color = OnSurfaceMuted) },
+            leadingIcon = { Icon(Icons.Default.Search, null, tint = OnSurfaceMuted) },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = CyberBlue, unfocusedBorderColor = Divider,
+                focusedTextColor = OnSurface, unfocusedTextColor = OnSurface, cursorColor = CyberBlue
+            ),
+            shape = RoundedCornerShape(10.dp),
+            singleLine = true
+        )
 
-    Box(modifier = Modifier.fillMaxSize().background(Background).nestedScroll(pullState.nestedScrollConnection)) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            OutlinedTextField(
-                value = state.query,
-                onValueChange = viewModel::setQuery,
-                placeholder = { Text("Поиск друзей", color = OnSurfaceMuted) },
-                leadingIcon = { Icon(Icons.Default.Search, null, tint = OnSurfaceMuted) },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = CyberBlue, unfocusedBorderColor = Divider,
-                    focusedTextColor = OnSurface, unfocusedTextColor = OnSurface, cursorColor = CyberBlue
-                ),
-                shape = RoundedCornerShape(10.dp),
-                singleLine = true
-            )
-
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             if (!state.isLoading) {
-                Text(
-                    "Друзья ${state.friends.size} · Онлайн ${state.onlineCount}",
-                    color = OnSurfaceMuted, fontSize = 12.sp,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
-                )
+                Text("Друзья ${state.friends.size} · Онлайн ${state.onlineCount}", color = OnSurfaceMuted, fontSize = 12.sp)
             }
+            TextButton(onClick = { viewModel.refresh() }) {
+                Text("↻  Обновить", color = CyberBlue, fontSize = 12.sp)
+            }
+        }
 
-            Box(modifier = Modifier.fillMaxSize()) {
-                when {
-                    state.isLoading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = CyberBlue)
-                    state.error != null -> Text(state.error ?: "", color = ErrorRed, modifier = Modifier.align(Alignment.Center))
-                    else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        items(state.filtered, key = { it.id }) { user ->
-                            FriendRow(
-                                user = user,
-                                onClick = { selectedUserId = user.id.toString() },
-                                onWriteMessage = {
-                                    chatUserName = user.fullName
-                                    chatUserPhoto = user.photo100
-                                    chatUserId = user.id
-                                }
-                            )
-                        }
+        Box(modifier = Modifier.fillMaxSize()) {
+            when {
+                state.isLoading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = CyberBlue)
+                state.error != null -> Text(state.error ?: "", color = ErrorRed, modifier = Modifier.align(Alignment.Center))
+                else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    items(state.filtered, key = { it.id }) { user ->
+                        FriendRow(
+                            user = user,
+                            onClick = { selectedUserId = user.id.toString() },
+                            onWriteMessage = {
+                                chatUserName = user.fullName
+                                chatUserPhoto = user.photo100
+                                chatUserId = user.id
+                            }
+                        )
                     }
                 }
             }
         }
-
-        PullToRefreshContainer(
-            state = pullState,
-            modifier = Modifier.align(Alignment.TopCenter),
-            containerColor = Surface,
-            contentColor = CyberBlue
-        )
     }
 }
 
@@ -137,11 +122,8 @@ fun FriendRow(user: VKUser, onClick: () -> Unit, onWriteMessage: () -> Unit) {
                 contentScale = ContentScale.Crop
             )
             if (user.isOnline) {
-                Box(
-                    modifier = Modifier.size(13.dp).align(Alignment.BottomEnd)
-                        .background(Background, CircleShape).padding(2.dp)
-                        .background(CyberAccent, CircleShape)
-                )
+                Box(modifier = Modifier.size(13.dp).align(Alignment.BottomEnd)
+                    .background(Background, CircleShape).padding(2.dp).background(CyberAccent, CircleShape))
             }
         }
         Spacer(Modifier.width(12.dp))

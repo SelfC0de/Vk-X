@@ -17,14 +17,10 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
-import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -43,7 +39,6 @@ import java.util.*
 fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
-    val pullState = rememberPullToRefreshState()
 
     val shouldLoadMore by remember {
         derivedStateOf {
@@ -57,17 +52,7 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
         if (shouldLoadMore && state.nextFrom != null) viewModel.loadMore()
     }
 
-    if (pullState.isRefreshing) {
-        LaunchedEffect(Unit) {
-            viewModel.loadFeed()
-            pullState.endRefresh()
-        }
-    }
-
-    Box(
-        modifier = Modifier.fillMaxSize().background(Background)
-            .nestedScroll(pullState.nestedScrollConnection)
-    ) {
+    Box(modifier = Modifier.fillMaxSize().background(Background)) {
         when {
             state.isLoading && state.posts.isEmpty() -> CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center), color = CyberBlue
@@ -78,9 +63,19 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
             ) {
                 Text(state.error ?: "", color = ErrorRed, fontSize = 14.sp)
                 Spacer(Modifier.height(12.dp))
-                Button(onClick = { viewModel.loadFeed() }) { Text("Повторить") }
+                Button(onClick = { viewModel.loadFeed() },
+                    colors = ButtonDefaults.buttonColors(containerColor = CyberBlue)) {
+                    Text("Повторить", color = Background)
+                }
             }
             else -> LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+                item {
+                    Box(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), contentAlignment = Alignment.Center) {
+                        TextButton(onClick = { viewModel.loadFeed() }) {
+                            Text("↻  Обновить ленту", color = CyberBlue, fontSize = 12.sp)
+                        }
+                    }
+                }
                 items(state.posts, key = { "${it.ownerId}_${it.id}" }) { post ->
                     PostCard(
                         post = post,
@@ -98,13 +93,6 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
                 }
             }
         }
-
-        PullToRefreshContainer(
-            state = pullState,
-            modifier = Modifier.align(Alignment.TopCenter),
-            containerColor = Surface,
-            contentColor = CyberBlue
-        )
     }
 }
 

@@ -108,7 +108,22 @@ fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScree
     MainScaffold(currentScreen = currentScreen, user = currentUser, onNavigate = { currentScreen = it }) {
         when (currentScreen) {
             Screen.Feed -> FeedScreen()
-            Screen.Messages -> MessagesScreen()
+            Screen.Messages -> {
+                var chatPeerId by remember { mutableStateOf<Int?>(null) }
+                var chatPeerName by remember { mutableStateOf("") }
+                var chatPeerPhoto by remember { mutableStateOf<String?>(null) }
+                val msgVm: com.selfcode.vkplus.ui.screens.messages.MessagesViewModel = hiltViewModel()
+                if (chatPeerId != null) {
+                    com.selfcode.vkplus.ui.screens.messages.ChatScreen(
+                        peerName = chatPeerName, peerPhoto = chatPeerPhoto,
+                        peerId = chatPeerId!!, onBack = { chatPeerId = null }, viewModel = msgVm
+                    )
+                } else {
+                    MessagesScreen(viewModel = msgVm, onOpenChat = { id, name, photo ->
+                        chatPeerId = id; chatPeerName = name; chatPeerPhoto = photo
+                    })
+                }
+            }
             Screen.Friends -> FriendsScreen()
             Screen.Profile -> ProfileScreen(onLogout = onLogout)
             Screen.Settings -> SettingsScreen(onAntiScreenChanged = onAntiScreenChanged)
