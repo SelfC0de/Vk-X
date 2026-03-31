@@ -36,6 +36,8 @@ class SettingsStore @Inject constructor(
         val KEY_ANTI_BAN           = booleanPreferencesKey("anti_ban")
         val KEY_BYPASS_ACTIVITY    = booleanPreferencesKey("bypass_activity")
         val KEY_BYPASS_LINKS       = booleanPreferencesKey("bypass_links")
+        val KEY_BYPASS_SHORT_URL   = booleanPreferencesKey("bypass_short_url")
+        val KEY_LONGPOLL_ONLY      = booleanPreferencesKey("longpoll_only")
     }
 
     val unRead:       Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_UNREAD]        ?: false }
@@ -53,7 +55,9 @@ class SettingsStore @Inject constructor(
     val offlinePost:  Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_OFFLINE_POST]  ?: false }
     val antiBan:         Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_ANTI_BAN]         ?: false }
     val bypassActivity:  Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_BYPASS_ACTIVITY]  ?: false }
-    val bypassLinks:     Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_BYPASS_LINKS]     ?: true }
+    val bypassLinks:       Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_BYPASS_LINKS]       ?: true }
+    val bypassShortUrl:    Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_BYPASS_SHORT_URL]   ?: false }
+    val longPollOnly:      Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_LONGPOLL_ONLY]      ?: false }
 
     suspend fun setUnRead(v: Boolean)        = context.settingsDataStore.edit { it[KEY_UNREAD]        = v }
     suspend fun setUnType(v: Boolean)        = context.settingsDataStore.edit { it[KEY_UNTYPE]        = v }
@@ -70,7 +74,9 @@ class SettingsStore @Inject constructor(
     suspend fun setOfflinePost(v: Boolean)   = context.settingsDataStore.edit { it[KEY_OFFLINE_POST]  = v }
     suspend fun setAntiBan(v: Boolean)          = context.settingsDataStore.edit { it[KEY_ANTI_BAN]         = v }
     suspend fun setBypassActivity(v: Boolean)   = context.settingsDataStore.edit { it[KEY_BYPASS_ACTIVITY]  = v }
-    suspend fun setBypassLinks(v: Boolean)      = context.settingsDataStore.edit { it[KEY_BYPASS_LINKS]     = v }
+    suspend fun setBypassLinks(v: Boolean)        = context.settingsDataStore.edit { it[KEY_BYPASS_LINKS]       = v }
+    suspend fun setBypassShortUrl(v: Boolean)     = context.settingsDataStore.edit { it[KEY_BYPASS_SHORT_URL]   = v }
+    suspend fun setLongPollOnly(v: Boolean)       = context.settingsDataStore.edit { it[KEY_LONGPOLL_ONLY]      = v }
 }
 
 enum class DeviceProfile(val label: String, val ua: String) {

@@ -31,6 +31,8 @@ data class SettingsUiState(
     val antiBan: Boolean          = false,
     val bypassActivity: Boolean   = false,
     val bypassLinks: Boolean      = true,
+    val bypassShortUrl: Boolean   = false,
+    val longPollOnly: Boolean     = false,
     val deviceUa: String       = DeviceProfile.KATE.ua
 )
 
@@ -55,6 +57,8 @@ class SettingsViewModel @Inject constructor(
         settingsStore.antiBan,
         settingsStore.bypassActivity,
         settingsStore.bypassLinks,
+        settingsStore.bypassShortUrl,
+        settingsStore.longPollOnly,
         settingsStore.deviceUa
     ) { arr ->
         SettingsUiState(
@@ -72,7 +76,9 @@ class SettingsViewModel @Inject constructor(
             antiBan        = arr[11] as Boolean,
             bypassActivity = arr[12] as Boolean,
             bypassLinks    = arr[13] as Boolean,
-            deviceUa       = arr[14] as String
+            bypassShortUrl = arr[14] as Boolean,
+            longPollOnly   = arr[15] as Boolean,
+            deviceUa       = arr[16] as String
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
 
@@ -88,7 +94,9 @@ class SettingsViewModel @Inject constructor(
     fun setOfflinePost(v: Boolean)   = viewModelScope.launch { settingsStore.setOfflinePost(v) }
     fun setAntiBan(v: Boolean)          = viewModelScope.launch { settingsStore.setAntiBan(v) }
     fun setBypassActivity(v: Boolean)   = viewModelScope.launch { settingsStore.setBypassActivity(v) }
-    fun setBypassLinks(v: Boolean)      = viewModelScope.launch { settingsStore.setBypassLinks(v) }
+    fun setBypassLinks(v: Boolean)        = viewModelScope.launch { settingsStore.setBypassLinks(v) }
+    fun setBypassShortUrl(v: Boolean)     = viewModelScope.launch { settingsStore.setBypassShortUrl(v) }
+    fun setLongPollOnly(v: Boolean)       = viewModelScope.launch { settingsStore.setLongPollOnly(v) }
 
     fun setForceOffline(v: Boolean) = viewModelScope.launch {
         settingsStore.setForceOffline(v)

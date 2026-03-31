@@ -123,6 +123,14 @@ interface VKApi {
         @Query("v") version: String = "5.199"
     ): VKResponse<VKWallPostResult>
 
+    @GET("messages.getLongPollServer")
+    suspend fun getLongPollServer(
+        @Query("lp_version") lpVersion: Int = 3,
+        @Query("need_pts") needPts: Int = 0,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<VKLongPollServer>
+
     @GET("execute")
     suspend fun execute(
         @Query("code") code: String,
@@ -216,4 +224,10 @@ data class VKGiftItem(
 
 data class VKWallPostResult(
     @com.google.gson.annotations.SerializedName("post_id") val postId: Int
+)
+
+data class VKLongPollServer(
+    @com.google.gson.annotations.SerializedName("key") val key: String,
+    @com.google.gson.annotations.SerializedName("server") val server: String,
+    @com.google.gson.annotations.SerializedName("ts") val ts: String
 )

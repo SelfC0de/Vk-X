@@ -114,8 +114,14 @@ private fun EngineTab(state: SettingsUiState, vm: SettingsViewModel) {
             SettingsToggle(Icons.Default.Visibility, "Bypass Activity Status",
                 "Загружать сообщения через execute — не триггерит Online", state.bypassActivity, vm::setBypassActivity)
             SettingsDivider()
-            SettingsToggle(Icons.Default.Link, "Bypass Link Warning",
+            SettingsToggle(Icons.Default.OpenInNew, "Bypass Link Warning",
                 "Открывать ссылки напрямую, игнорируя vk.com/away", state.bypassLinks, vm::setBypassLinks)
+            SettingsDivider()
+            SettingsToggle(Icons.Default.FindReplace, "Bypass Link Shorter",
+                "HEAD-запрос к vk.cc до клика — показывает реальный URL", state.bypassShortUrl, vm::setBypassShortUrl)
+            SettingsDivider()
+            SettingsToggle(Icons.Default.WifiTethering, "LongPoll Only Mode",
+                "Получать сообщения без setOnline — вечный оффлайн при чтении", state.longPollOnly, vm::setLongPollOnly)
         }
 
         SettingsSection("⌨️ Type Status Changer") {

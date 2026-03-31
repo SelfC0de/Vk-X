@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.Alignment
+import com.selfcode.vkplus.data.api.ShortUrlResolver
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -204,7 +205,7 @@ fun PostCard(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = androidx.compose.material.icons.Icons.Default.Link,
+                                imageVector = androidx.compose.material.icons.Icons.Default.OpenInNew,
                                 contentDescription = null,
                                 tint = CyberBlue,
                                 modifier = Modifier.size(16.dp)
