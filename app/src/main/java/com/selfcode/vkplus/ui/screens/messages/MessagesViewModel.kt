@@ -22,7 +22,12 @@ data class MessagesUiState(
     val chatMessages: Map<Int, List<VKMessage>> = emptyMap(),
     val isLoading: Boolean = false,
     val isChatLoading: Boolean = false,
-    val error: String? = null
+    val isLoadingMore: Boolean = false,
+    val error: String? = null,
+    val totalCount: Int = 0,
+    val searchQuery: String = "",
+    val searchResults: List<VKMessage> = emptyList(),
+    val isSearching: Boolean = false
 )
 
 @HiltViewModel
@@ -166,6 +171,41 @@ class MessagesViewModel @Inject constructor(
             when (repository.restoreMessage(messageId)) {
                 is VKResult.Success -> loadMessages(peerId)
                 is VKResult.Error -> {}
+            }
+        }
+    }
+
+    fun loadMoreConversations() {
+        val state = _uiState.value
+        if (state.isLoadingMore || state.dialogs.size >= state.totalCount) return
+        viewModelScope.launch {
+            _uiState.value = state.copy(isLoadingMore = true)
+            when (val r = repository.getConversationsPaged(offset = state.dialogs.size)) {
+                is VKResult.Success -> {
+                    val newProfiles = r.data.profiles?.associateBy { it.id } ?: emptyMap()
+                    _uiState.value = _uiState.value.copy(
+                        dialogs = state.dialogs + r.data.items,
+                        profiles = state.profiles + newProfiles,
+                        totalCount = r.data.count,
+                        isLoadingMore = false
+                    )
+                }
+                is VKResult.Error -> _uiState.value = _uiState.value.copy(isLoadingMore = false)
+            }
+        }
+    }
+
+    fun setSearchQuery(q: String) {
+        _uiState.value = _uiState.value.copy(searchQuery = q)
+        if (q.isBlank()) {
+            _uiState.value = _uiState.value.copy(searchResults = emptyList())
+            return
+        }
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isSearching = true)
+            when (val r = repository.searchMessages(q)) {
+                is VKResult.Success -> _uiState.value = _uiState.value.copy(searchResults = r.data, isSearching = false)
+                is VKResult.Error -> _uiState.value = _uiState.value.copy(isSearching = false)
             }
         }
     }

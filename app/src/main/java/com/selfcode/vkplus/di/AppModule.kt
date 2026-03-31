@@ -3,7 +3,6 @@ package com.selfcode.vkplus.di
 import android.content.Context
 import androidx.work.WorkManager
 import com.selfcode.vkplus.auth.VKConfig
-import com.selfcode.vkplus.data.api.LongPollService
 import com.selfcode.vkplus.data.api.PrivacyInterceptor
 import com.selfcode.vkplus.data.api.VKApi
 import dagger.Module
@@ -50,9 +49,4 @@ object AppModule {
     @Singleton
     fun provideWorkManager(@ApplicationContext context: Context): WorkManager =
         WorkManager.getInstance(context)
-
-    @Provides
-    @Singleton
-    fun provideTranslateUseCase(repository: VKRepository): TranslateUseCase =
-        TranslateUseCase(repository)
 }

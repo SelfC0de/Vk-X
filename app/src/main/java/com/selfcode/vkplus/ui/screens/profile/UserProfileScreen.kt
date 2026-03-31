@@ -47,16 +47,41 @@ class UserProfileViewModel @Inject constructor(private val repository: VKReposit
     val loading: StateFlow<Boolean> = _loading
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
+    private val _lastActivity = MutableStateFlow<String?>(null)
+    val lastActivity: StateFlow<String?> = _lastActivity
 
     fun load(userId: String) {
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
             when (val r = repository.getUserExtended(userId)) {
-                is VKResult.Success -> _user.value = r.data
+                is VKResult.Success -> {
+                    _user.value = r.data
+                    loadActivity(r.data.id)
+                }
                 is VKResult.Error -> _error.value = r.message
             }
             _loading.value = false
+        }
+    }
+
+    private suspend fun loadActivity(userId: Int) {
+        when (val r = repository.getLastActivity(userId)) {
+            is VKResult.Success -> {
+                val activity = r.data
+                _lastActivity.value = if (activity.online == 1) "онлайн сейчас" else {
+                    val now = System.currentTimeMillis() / 1000
+                    val diff = now - activity.time
+                    when {
+                        diff < 60 -> "был(а) только что"
+                        diff < 3600 -> "был(а) ${diff / 60} мин. назад"
+                        diff < 86400 -> "был(а) сегодня в " + java.text.SimpleDateFormat("HH:mm", java.util.Locale("ru")).format(java.util.Date(activity.time * 1000))
+                        diff < 172800 -> "был(а) вчера в " + java.text.SimpleDateFormat("HH:mm", java.util.Locale("ru")).format(java.util.Date(activity.time * 1000))
+                        else -> "был(а) " + java.text.SimpleDateFormat("d MMM в HH:mm", java.util.Locale("ru")).format(java.util.Date(activity.time * 1000))
+                    }
+                }
+            }
+            is VKResult.Error -> {}
         }
     }
 }
@@ -72,6 +97,7 @@ fun UserProfileScreen(
     val user by viewModel.user.collectAsState()
     val loading by viewModel.loading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val lastActivity by viewModel.lastActivity.collectAsState()
 
     LaunchedEffect(userId) { viewModel.load(userId) }
 

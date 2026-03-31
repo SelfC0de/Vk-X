@@ -226,6 +226,54 @@ interface VKApi {
         @Query("v") version: String = "5.199"
     ): VKResponse<Int>
 
+    @GET("friends.getOnline")
+    suspend fun getFriendsOnline(
+        @Query("user_id") userId: Int? = null,
+        @Query("fields") fields: String = "photo_100,status",
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<com.google.gson.JsonElement>
+
+    @GET("users.getFollowers")
+    suspend fun getFollowers(
+        @Query("user_id") userId: Int,
+        @Query("count") count: Int = 50,
+        @Query("offset") offset: Int = 0,
+        @Query("fields") fields: String = "photo_100,online",
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<VKUsersResponse>
+
+    @GET("wall.getComments")
+    suspend fun getWallComments(
+        @Query("owner_id") ownerId: Int,
+        @Query("post_id") postId: Int,
+        @Query("count") count: Int = 20,
+        @Query("extended") extended: Int = 1,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<VKCommentsResponse>
+
+    @GET("messages.search")
+    suspend fun searchMessages(
+        @Query("q") query: String,
+        @Query("count") count: Int = 20,
+        @Query("peer_id") peerId: Int? = null,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<VKMessagesResponse>
+
+    @GET("messages.getConversations")
+    suspend fun getConversationsPaged(
+        @Query("count") count: Int = 20,
+        @Query("offset") offset: Int = 0,
+        @Query("filter") filter: String = "all",
+        @Query("extended") extended: Int = 1,
+        @Query("fields") fields: String = "photo_100,online",
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<com.selfcode.vkplus.data.model.VKConversationsResponse>
+
     @GET("messages.getLongPollServer")
     suspend fun getLongPollServer(
         @Query("lp_version") lpVersion: Int = 3,
@@ -438,4 +486,27 @@ data class VKTranslateResponse(
 data class VKLastActivity(
     @com.google.gson.annotations.SerializedName("online") val online: Int = 0,
     @com.google.gson.annotations.SerializedName("time") val time: Long = 0
+)
+
+data class VKUsersResponse(
+    @com.google.gson.annotations.SerializedName("count") val count: Int = 0,
+    @com.google.gson.annotations.SerializedName("items") val items: List<com.selfcode.vkplus.data.model.VKUser> = emptyList()
+)
+
+data class VKCommentsResponse(
+    @com.google.gson.annotations.SerializedName("count") val count: Int = 0,
+    @com.google.gson.annotations.SerializedName("items") val items: List<VKComment> = emptyList(),
+    @com.google.gson.annotations.SerializedName("profiles") val profiles: List<com.selfcode.vkplus.data.model.VKUser> = emptyList()
+)
+
+data class VKComment(
+    @com.google.gson.annotations.SerializedName("id") val id: Int = 0,
+    @com.google.gson.annotations.SerializedName("from_id") val fromId: Int = 0,
+    @com.google.gson.annotations.SerializedName("date") val date: Long = 0,
+    @com.google.gson.annotations.SerializedName("text") val text: String = ""
+)
+
+data class VKMessagesResponse(
+    @com.google.gson.annotations.SerializedName("count") val count: Int = 0,
+    @com.google.gson.annotations.SerializedName("items") val items: List<com.selfcode.vkplus.data.model.VKMessage> = emptyList()
 )

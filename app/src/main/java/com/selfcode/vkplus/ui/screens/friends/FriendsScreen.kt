@@ -11,6 +11,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,6 +36,7 @@ fun FriendsScreen(
     messagesViewModel: MessagesViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+    var selectedTab by remember { mutableIntStateOf(0) }
     var selectedUserId by remember { mutableStateOf<String?>(null) }
     var chatUserId by remember { mutableStateOf<Int?>(null) }
     var chatUserName by remember { mutableStateOf("") }
@@ -60,6 +63,22 @@ fun FriendsScreen(
     }
 
     Column(modifier = Modifier.fillMaxSize().background(Background)) {
+        // Tabs
+        TabRow(selectedTabIndex = selectedTab,
+            containerColor = Surface, contentColor = CyberBlue,
+            indicator = { tabPositions ->
+                TabRowDefaults.SecondaryIndicator(
+                    modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
+                    color = CyberBlue
+                )
+            }
+        ) {
+            Tab(selected = selectedTab == 0, onClick = { selectedTab = 0; viewModel.load() },
+                text = { Text("Все друзья", fontSize = 13.sp) })
+            Tab(selected = selectedTab == 1, onClick = { selectedTab = 1; viewModel.loadOnlineFriends() },
+                text = { Text("Онлайн ${state.onlineCount}", fontSize = 13.sp) })
+        }
+
         OutlinedTextField(
             value = state.query,
             onValueChange = viewModel::setQuery,

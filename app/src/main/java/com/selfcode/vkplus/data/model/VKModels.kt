@@ -176,3 +176,10 @@ data class VKAudioMessage(
     @SerializedName("link_ogg") val linkOgg: String? = null,
     @SerializedName("was_listened") val wasListened: Boolean = false
 )
+
+data class VKConversationsResponse(
+    @SerializedName("count") val count: Int = 0,
+    @SerializedName("items") val items: List<VKDialog> = emptyList(),
+    @SerializedName("profiles") val profiles: List<VKUser>? = null,
+    @SerializedName("groups") val groups: List<VKGroup>? = null
+)

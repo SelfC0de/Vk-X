@@ -49,6 +49,16 @@ class FriendsViewModel @Inject constructor(
 
     fun refresh() = load()
 
+    fun loadOnlineFriends() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            when (val r = repository.getOnlineFriends()) {
+                is VKResult.Success -> _uiState.value = _uiState.value.copy(friends = r.data, isLoading = false)
+                is VKResult.Error -> _uiState.value = _uiState.value.copy(isLoading = false, error = r.message)
+            }
+        }
+    }
+
     fun setQuery(q: String) {
         _uiState.value = _uiState.value.copy(query = q)
     }
