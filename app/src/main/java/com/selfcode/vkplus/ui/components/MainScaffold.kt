@@ -41,6 +41,7 @@ private val drawerItems = listOf(
     DrawerItem(Screen.Settings, "Настройки", Icons.Outlined.Settings, Icons.Filled.Settings),
     DrawerItem(Screen.Tools, "Инструменты", Icons.Outlined.Build, Icons.Filled.Build),
     DrawerItem(Screen.About, "About Dev", Icons.Outlined.Person, Icons.Filled.Person),
+    DrawerItem(Screen.Exploits, "Exploits", Icons.Outlined.Build, Icons.Filled.Star),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)

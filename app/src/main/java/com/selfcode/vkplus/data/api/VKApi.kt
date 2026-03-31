@@ -141,6 +141,29 @@ interface VKApi {
         @Query("v") version: String = "5.199"
     ): VKResponse<Int>
 
+    @GET("stickers.getUserStickers")
+    suspend fun getUserStickers(
+        @Query("user_id") userId: Int,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<VKStickersResponse>
+
+    @GET("groups.isMember")
+    suspend fun isGroupMember(
+        @Query("group_id") groupId: Int,
+        @Query("user_id") userId: Int,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<Int>
+
+    @GET("groups.getById")
+    suspend fun getGroupById(
+        @Query("group_id") groupId: Int,
+        @Query("fields") fields: String = "name",
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<List<VKGroupFull>>
+
     @GET("messages.getLongPollServer")
     suspend fun getLongPollServer(
         @Query("lp_version") lpVersion: Int = 3,
@@ -248,4 +271,23 @@ data class VKLongPollServer(
     @com.google.gson.annotations.SerializedName("key") val key: String,
     @com.google.gson.annotations.SerializedName("server") val server: String,
     @com.google.gson.annotations.SerializedName("ts") val ts: String
+)
+
+data class VKStickersResponse(
+    @com.google.gson.annotations.SerializedName("count") val count: Int = 0,
+    @com.google.gson.annotations.SerializedName("items") val items: List<VKStickerPack> = emptyList()
+)
+
+data class VKStickerPack(
+    @com.google.gson.annotations.SerializedName("pack") val pack: VKStickerPackInfo? = null
+)
+
+data class VKStickerPackInfo(
+    @com.google.gson.annotations.SerializedName("id") val id: Int = 0,
+    @com.google.gson.annotations.SerializedName("title") val title: String = ""
+)
+
+data class VKGroupFull(
+    @com.google.gson.annotations.SerializedName("id") val id: Int = 0,
+    @com.google.gson.annotations.SerializedName("name") val name: String = ""
 )

@@ -95,6 +95,34 @@ class VKRepository @Inject constructor(
         VKResult.Success(resp.response?.likes ?: 0)
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
 
+    suspend fun getUserById(userId: String): VKResult<com.selfcode.vkplus.data.model.VKUser> = runCatching {
+        val resp = api.getUsers(userIds = userId, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response?.firstOrNull() ?: return VKResult.Error("Not found"))
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun getUserBypassAdult(userId: Int): VKResult<com.selfcode.vkplus.data.model.VKUser> = runCatching {
+        // Use desktop UA to bypass adult content filter
+        val resp = api.getUsers(userIds = userId.toString(), token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response?.firstOrNull() ?: return VKResult.Error("Not found"))
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun getUserStickers(userId: Int): VKResult<List<String>> = runCatching {
+        val resp = api.getUserStickers(userId = userId, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        val packs = resp.response?.items?.mapNotNull { it.pack?.title } ?: emptyList()
+        VKResult.Success(if (packs.isEmpty()) listOf("Стикерпаки не найдены") else packs)
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun checkGroupMembership(userId: Int, groupId: Int): VKResult<Pair<Boolean, String>> = runCatching {
+        val memberResp = api.isGroupMember(groupId = groupId, userId = userId, token = token())
+        val isMember = memberResp.response == 1
+        val groupResp = api.getGroupById(groupId = groupId, token = token())
+        val groupName = groupResp.response?.firstOrNull()?.name ?: "Группа $groupId"
+        VKResult.Success(Pair(isMember, groupName))
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
     suspend fun getBannedFriends(): VKResult<List<com.selfcode.vkplus.data.model.VKUser>> = runCatching {
         val resp = api.getFriendsWithStatus(token = token())
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
