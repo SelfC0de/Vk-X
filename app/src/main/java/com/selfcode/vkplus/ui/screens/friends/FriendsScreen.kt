@@ -32,7 +32,7 @@ fun FriendsScreen(viewModel: FriendsViewModel = hiltViewModel()) {
             onValueChange = viewModel::setQuery,
             placeholder = { Text("Поиск друзей", color = OnSurfaceMuted) },
             leadingIcon = {
-                Icon(Icons.Default.Search, contentDescription = null, tint = OnSurfaceMuted)
+                Icon(Icons.Filled.Search, contentDescription = null, tint = OnSurfaceMuted)
             },
             modifier = Modifier
                 .fillMaxWidth()

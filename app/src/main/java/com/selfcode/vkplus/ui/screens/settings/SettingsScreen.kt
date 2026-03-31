@@ -54,27 +54,27 @@ private fun PrivacyTab(state: SettingsUiState, vm: SettingsViewModel, onAntiScre
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         SettingsSection("🛡 Режим невидимки") {
-            SettingsToggle(Icons.Default.VisibilityOff, "UnRead",
+            SettingsToggle(Icons.Filled.VisibilityOff, "UnRead",
                 "Сообщения остаются непрочитанными", state.unRead, vm::setUnRead)
             SettingsDivider()
-            SettingsToggle(Icons.Default.Clear, "UnType",
+            SettingsToggle(Icons.Filled.Clear, "UnType",
                 "Не отправлять «Печатает...» (блокировка)", state.unType, vm::setUnType)
             SettingsDivider()
-            SettingsToggle(Icons.Default.WifiOff, "Force Offline",
+            SettingsToggle(Icons.Filled.WifiOff, "Force Offline",
                 "Каждые 5 мин отправляет account.setOffline", state.forceOffline, vm::setForceOffline)
             SettingsDivider()
-            SettingsToggle(Icons.Default.Person, "Ghost Online",
+            SettingsToggle(Icons.Filled.Person, "Ghost Online",
                 "Никогда не отправлять account.setOnline", state.ghostOnline, vm::setGhostOnline)
             SettingsDivider()
-            SettingsToggle(Icons.Default.VisibilityOff, "Ghost View Story",
+            SettingsToggle(Icons.Filled.VisibilityOff, "Ghost View Story",
                 "Просмотр историй без отправки stories.markAsViewed", state.ghostStory, vm::setGhostStory)
         }
 
         SettingsSection("📡 Антислежка") {
-            SettingsToggle(Icons.Default.Notifications, "Anti-Telemetry",
+            SettingsToggle(Icons.Filled.Notifications, "Anti-Telemetry",
                 "Блокировать stats.vk-portal.net и трекеры", state.antiTelemetry, vm::setAntiTelemetry)
             SettingsDivider()
-            SettingsToggle(Icons.Default.Lock, "Anti Screen Rec",
+            SettingsToggle(Icons.Filled.Lock, "Anti Screen Rec",
                 "Чёрный экран при скриншоте и записи", state.antiScreen) {
                 vm.setAntiScreen(it); onAntiScreenChanged(it)
             }
@@ -98,29 +98,29 @@ private fun EngineTab(state: SettingsUiState, vm: SettingsViewModel) {
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         SettingsSection("🎙 Silent VM Listener") {
-            SettingsToggle(Icons.Default.Mic, "Silent VM Listener",
+            SettingsToggle(Icons.Filled.Mic, "Silent VM Listener",
                 "Слушать ГС без отправки markAsListened — метка не улетает", state.silentVm, vm::setSilentVm)
         }
 
         SettingsSection("🔄 Anti-Ban Engine") {
-            SettingsToggle(Icons.Default.Refresh, "Anti-Ban Engine",
+            SettingsToggle(Icons.Filled.Refresh, "Anti-Ban Engine",
                 "Авторотация client_id при капче/rate limit", state.antiBan, vm::setAntiBan)
             SettingsDivider()
-            SettingsToggle(Icons.Default.Warning, "Offline Post",
+            SettingsToggle(Icons.Filled.Warning, "Offline Post",
                 "Публиковать/отправлять без триггера account.setOnline", state.offlinePost, vm::setOfflinePost)
         }
 
         SettingsSection("🕵️ Activity Bypass") {
-            SettingsToggle(Icons.Default.Visibility, "Bypass Activity Status",
+            SettingsToggle(Icons.Filled.Visibility, "Bypass Activity Status",
                 "Загружать сообщения через execute — не триггерит Online", state.bypassActivity, vm::setBypassActivity)
             SettingsDivider()
-            SettingsToggle(Icons.Default.ExitToApp, "Bypass Link Warning",
+            SettingsToggle(Icons.Filled.ExitToApp, "Bypass Link Warning",
                 "Открывать ссылки напрямую, игнорируя vk.com/away", state.bypassLinks, vm::setBypassLinks)
             SettingsDivider()
-            SettingsToggle(Icons.Default.Refresh, "Bypass Link Shorter",
+            SettingsToggle(Icons.Filled.Refresh, "Bypass Link Shorter",
                 "HEAD-запрос к vk.cc до клика — показывает реальный URL", state.bypassShortUrl, vm::setBypassShortUrl)
             SettingsDivider()
-            SettingsToggle(Icons.Default.Wifi, "LongPoll Only Mode",
+            SettingsToggle(Icons.Filled.Wifi, "LongPoll Only Mode",
                 "Получать сообщения без setOnline — вечный оффлайн при чтении", state.longPollOnly, vm::setLongPollOnly)
         }
 
@@ -155,7 +155,7 @@ private fun EngineTab(state: SettingsUiState, vm: SettingsViewModel) {
                 }
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Info, contentDescription = null, tint = OnSurfaceMuted, modifier = Modifier.size(13.dp))
+                    Icon(Icons.Filled.Info, contentDescription = null, tint = OnSurfaceMuted, modifier = Modifier.size(13.dp))
                     Spacer(Modifier.width(6.dp))
                     Text(
                         "«Отключено» = UnType (статус не отправляется совсем).\nОстальные варианты подменяют реальный статус.",
@@ -207,13 +207,13 @@ private fun DeviceTab(state: SettingsUiState, vm: SettingsViewModel) {
                             )
                             Text(profile.ua.take(52) + "…", color = OnSurfaceMuted, fontSize = 10.sp, lineHeight = 14.sp)
                         }
-                        if (selected) Icon(Icons.Default.CheckCircle, contentDescription = null, tint = CyberBlue, modifier = Modifier.size(18.dp))
+                        if (selected) Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = CyberBlue, modifier = Modifier.size(18.dp))
                     }
                     if (profile != DeviceProfile.entries.last()) SettingsDivider()
                 }
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Info, contentDescription = null, tint = OnSurfaceMuted, modifier = Modifier.size(13.dp))
+                    Icon(Icons.Filled.Info, contentDescription = null, tint = OnSurfaceMuted, modifier = Modifier.size(13.dp))
                     Spacer(Modifier.width(6.dp))
                     Text(
                         "Применяется ко всем запросам автоматически. Влияет на подпись постов и статус устройства в профиле.",

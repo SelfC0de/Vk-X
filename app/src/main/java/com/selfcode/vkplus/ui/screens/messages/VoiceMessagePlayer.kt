@@ -77,7 +77,7 @@ fun VoiceMessagePlayer(audio: VKAudioMessage, isOutgoing: Boolean) {
             modifier = Modifier.size(36.dp).background(CyberBlue.copy(alpha = 0.15f), CircleShape)
         ) {
             Icon(
-                if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                 contentDescription = null,
                 tint = CyberBlue,
                 modifier = Modifier.size(20.dp)
@@ -93,7 +93,7 @@ fun VoiceMessagePlayer(audio: VKAudioMessage, isOutgoing: Boolean) {
             )
             Spacer(Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Mic, contentDescription = null, tint = OnSurfaceMuted, modifier = Modifier.size(12.dp))
+                Icon(Icons.Filled.Mic, contentDescription = null, tint = OnSurfaceMuted, modifier = Modifier.size(12.dp))
                 Spacer(Modifier.width(4.dp))
                 Text(
                     text = formatDuration(audio.duration),

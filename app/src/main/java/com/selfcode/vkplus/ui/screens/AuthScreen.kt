@@ -280,7 +280,7 @@ private fun TokenTab(onManualToken: (String) -> Unit, showInvalidError: Boolean)
                 trailingIcon = {
                     IconButton(onClick = { tokenVisible = !tokenVisible }) {
                         Icon(
-                            if (tokenVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            if (tokenVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                             contentDescription = null, tint = OnSurfaceMuted
                         )
                     }
