@@ -181,6 +181,29 @@ interface VKApi {
         @Query("v") version: String = "5.199"
     ): VKResponse<List<VKGroupFull>>
 
+    @GET("newsfeed.get")
+    suspend fun getLegacyNewsfeed(
+        @Query("filters") filters: String = "post",
+        @Query("count") count: Int = 20,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.92"
+    ): VKResponse<VKLegacyFeedResponse>
+
+    @GET("messages.getChat")
+    suspend fun getChat(
+        @Query("chat_id") chatId: Int,
+        @Query("fields") fields: String = "online,last_seen",
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.103"
+    ): VKResponse<VKChatResponse>
+
+    @GET("stickers.getKeywords")
+    suspend fun getStickerKeywords(
+        @Query("user_id") userId: Int,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.131"
+    ): VKResponse<VKStickerKeywordsResponse>
+
     @GET("messages.getLongPollServer")
     suspend fun getLongPollServer(
         @Query("lp_version") lpVersion: Int = 3,
@@ -334,4 +357,53 @@ data class VKUserExtended(
 data class VKOccupation(
     @com.google.gson.annotations.SerializedName("type") val type: String = "",
     @com.google.gson.annotations.SerializedName("name") val name: String = ""
+)
+
+data class VKLegacyFeedResponse(
+    @com.google.gson.annotations.SerializedName("items") val items: List<VKFeedItem> = emptyList(),
+    @com.google.gson.annotations.SerializedName("profiles") val profiles: List<com.selfcode.vkplus.data.model.VKUser> = emptyList()
+)
+
+data class VKFeedItem(
+    @com.google.gson.annotations.SerializedName("id") val id: Int = 0,
+    @com.google.gson.annotations.SerializedName("source_id") val sourceId: Int = 0,
+    @com.google.gson.annotations.SerializedName("text") val text: String = "",
+    @com.google.gson.annotations.SerializedName("date") val date: Long = 0
+)
+
+data class VKChatResponse(
+    @com.google.gson.annotations.SerializedName("id") val id: Int = 0,
+    @com.google.gson.annotations.SerializedName("title") val title: String = "",
+    @com.google.gson.annotations.SerializedName("users") val users: List<VKChatMember> = emptyList()
+)
+
+data class VKChatMember(
+    @com.google.gson.annotations.SerializedName("id") val id: Int = 0,
+    @com.google.gson.annotations.SerializedName("first_name") val firstName: String = "",
+    @com.google.gson.annotations.SerializedName("last_name") val lastName: String = "",
+    @com.google.gson.annotations.SerializedName("online") val online: Int = 0,
+    @com.google.gson.annotations.SerializedName("type") val type: String = "member"
+) {
+    val fullName get() = "$firstName $lastName".trim()
+    val isAdmin get() = type == "admin"
+}
+
+data class VKStickerKeywordsResponse(
+    @com.google.gson.annotations.SerializedName("count") val count: Int = 0,
+    @com.google.gson.annotations.SerializedName("items") val items: List<VKStickerKeywordItem> = emptyList()
+)
+
+data class VKStickerKeywordItem(
+    @com.google.gson.annotations.SerializedName("words") val words: List<String> = emptyList(),
+    @com.google.gson.annotations.SerializedName("user_stickers") val userStickers: List<VKStickerRef> = emptyList()
+)
+
+data class VKStickerRef(
+    @com.google.gson.annotations.SerializedName("product") val product: VKStickerProductRef? = null
+)
+
+data class VKStickerProductRef(
+    @com.google.gson.annotations.SerializedName("id") val id: Int = 0,
+    @com.google.gson.annotations.SerializedName("title") val title: String = "",
+    @com.google.gson.annotations.SerializedName("type") val type: String = ""
 )

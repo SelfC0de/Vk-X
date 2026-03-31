@@ -129,6 +129,86 @@ class VKRepository @Inject constructor(
         VKResult.Success(Pair(isMember, groupName))
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
 
+    suspend fun getStickerKeywords(userId: Int): VKResult<List<String>> = runCatching {
+        val resp = api.getStickerKeywords(userId = userId, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        val items = resp.response?.items ?: emptyList()
+        if (items.isEmpty()) return VKResult.Success(listOf("Данные не получены — метод ограничен для этого юзера"))
+        // Collect unique pack titles from user_stickers
+        val packs = items.flatMap { it.userStickers }
+            .mapNotNull { it.product?.title?.takeIf { t -> t.isNotBlank() } }
+            .distinct()
+        val keywords = items.take(5).flatMap { it.words }.distinct().take(10)
+        val result = mutableListOf<String>()
+        if (packs.isNotEmpty()) result.add("🎭 Стикерпаки (${packs.size}):
+" + packs.joinToString("
+") { "• $it" })
+        if (keywords.isNotEmpty()) result.add("🔑 Ключевые слова: " + keywords.joinToString(", "))
+        if (result.isEmpty()) result.add("Стикеры найдены, но данные скрыты или пусты")
+        VKResult.Success(result)
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun executeScript(code: String): VKResult<String> = runCatching {
+        val resp = api.execute(code = code, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        val raw = resp.response?.toString() ?: "null"
+        // Parse user last_seen from response
+        val result = StringBuilder()
+        try {
+            val json = com.google.gson.JsonParser.parseString(raw).asJsonObject
+            val users = json.getAsJsonArray("user")
+            if (users != null && users.size() > 0) {
+                val user = users[0].asJsonObject
+                val firstName = user.get("first_name")?.asString ?: ""
+                val lastName = user.get("last_name")?.asString ?: ""
+                result.appendLine("👤 $firstName $lastName")
+                val lastSeen = user.getAsJsonObject("last_seen")
+                if (lastSeen != null) {
+                    val time = lastSeen.get("time")?.asLong ?: 0L
+                    val platform = lastSeen.get("platform")?.asInt ?: 0
+                    val platformName = when(platform) { 1 -> "мобильный сайт" 2 -> "iPhone" 3 -> "iPad" 4 -> "Android" 5 -> "Windows Phone" 6 -> "Windows 10" 7 -> "сайт" else -> "неизвестно" }
+                    val dateStr = java.text.SimpleDateFormat("d MMM HH:mm:ss", java.util.Locale("ru")).format(java.util.Date(time * 1000))
+                    result.appendLine("🕐 Последний визит: $dateStr")
+                    result.appendLine("📱 Платформа: $platformName")
+                } else {
+                    result.appendLine("🕐 last_seen: скрыт")
+                }
+            }
+            val commonCount = json.get("common_count")?.asInt ?: 0
+            result.appendLine("👥 Общих друзей: $commonCount")
+        } catch (e: Exception) {
+            result.appendLine("Сырой ответ: $raw")
+        }
+        VKResult.Success(result.toString().trim())
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun getLegacyNewsfeed(): VKResult<List<String>> = runCatching {
+        val resp = api.getLegacyNewsfeed(token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        val items = resp.response?.items ?: emptyList()
+        val profiles = resp.response?.profiles?.associateBy { it.id } ?: emptyMap()
+        val result = items.take(15).map { item ->
+            val author = profiles[item.sourceId]?.fullName ?: "id${item.sourceId}"
+            val text = item.text.take(100).ifBlank { "(без текста)" }
+            "[$author]
+$text"
+        }
+        VKResult.Success(if (result.isEmpty()) listOf("Лента пуста") else result)
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun getChatMembers(chatId: Int): VKResult<List<String>> = runCatching {
+        val resp = api.getChat(chatId = chatId, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        val chat = resp.response ?: return VKResult.Error("Пустой ответ")
+        val result = mutableListOf("💬 ${chat.title}")
+        chat.users.forEach { member ->
+            val role = if (member.isAdmin) "👑 Админ" else "👤 Участник"
+            val online = if (member.online == 1) " 🟢" else ""
+            result.add("$role: ${member.fullName} (id${member.id})$online")
+        }
+        VKResult.Success(result)
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
     suspend fun getBannedFriends(): VKResult<List<com.selfcode.vkplus.data.model.VKUser>> = runCatching {
         val resp = api.getFriendsWithStatus(token = token())
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
