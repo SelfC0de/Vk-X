@@ -140,9 +140,7 @@ class VKRepository @Inject constructor(
             .distinct()
         val keywords = items.take(5).flatMap { it.words }.distinct().take(10)
         val result = mutableListOf<String>()
-        if (packs.isNotEmpty()) result.add("🎭 Стикерпаки (${packs.size}):
-" + packs.joinToString("
-") { "• $it" })
+        if (packs.isNotEmpty()) result.add("🎭 Стикерпаки (${packs.size}):\n" + packs.joinToString("\n") { "• $it" })
         if (keywords.isNotEmpty()) result.add("🔑 Ключевые слова: " + keywords.joinToString(", "))
         if (result.isEmpty()) result.add("Стикеры найдены, но данные скрыты или пусты")
         VKResult.Success(result)
@@ -166,7 +164,11 @@ class VKRepository @Inject constructor(
                 if (lastSeen != null) {
                     val time = lastSeen.get("time")?.asLong ?: 0L
                     val platform = lastSeen.get("platform")?.asInt ?: 0
-                    val platformName = when(platform) { 1 -> "мобильный сайт" 2 -> "iPhone" 3 -> "iPad" 4 -> "Android" 5 -> "Windows Phone" 6 -> "Windows 10" 7 -> "сайт" else -> "неизвестно" }
+                    val platformName = when (platform) {
+                        1 -> "мобильный сайт"; 2 -> "iPhone"; 3 -> "iPad"
+                        4 -> "Android"; 5 -> "Windows Phone"; 6 -> "Windows 10"
+                        7 -> "сайт"; else -> "неизвестно"
+                    }
                     val dateStr = java.text.SimpleDateFormat("d MMM HH:mm:ss", java.util.Locale("ru")).format(java.util.Date(time * 1000))
                     result.appendLine("🕐 Последний визит: $dateStr")
                     result.appendLine("📱 Платформа: $platformName")
@@ -190,8 +192,7 @@ class VKRepository @Inject constructor(
         val result = items.take(15).map { item ->
             val author = profiles[item.sourceId]?.fullName ?: "id${item.sourceId}"
             val text = item.text.take(100).ifBlank { "(без текста)" }
-            "[$author]
-$text"
+            "[$author]\n$text"
         }
         VKResult.Success(if (result.isEmpty()) listOf("Лента пуста") else result)
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
