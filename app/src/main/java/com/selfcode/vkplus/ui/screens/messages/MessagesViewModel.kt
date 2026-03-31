@@ -78,10 +78,28 @@ class MessagesViewModel @Inject constructor(
     fun sendMessage(peerId: Int, text: String) {
         viewModelScope.launch {
             _isSending.value = true
-            when (val r = repository.sendMessage(peerId, text)) {
-                is VKResult.Success -> {
-                    loadMessages(peerId)
-                }
+            when (repository.sendMessage(peerId, text)) {
+                is VKResult.Success -> loadMessages(peerId)
+                is VKResult.Error -> {}
+            }
+            _isSending.value = false
+        }
+    }
+
+    fun deleteMessage(peerId: Int, messageId: Int) {
+        viewModelScope.launch {
+            repository.deleteMessage(peerId, messageId)
+            val current = _uiState.value.chatMessages.toMutableMap()
+            current[peerId] = current[peerId]?.filter { it.id != messageId } ?: emptyList()
+            _uiState.value = _uiState.value.copy(chatMessages = current)
+        }
+    }
+
+    fun editMessage(peerId: Int, messageId: Int, newText: String) {
+        viewModelScope.launch {
+            _isSending.value = true
+            when (repository.editMessage(peerId, messageId, newText)) {
+                is VKResult.Success -> loadMessages(peerId)
                 is VKResult.Error -> {}
             }
             _isSending.value = false

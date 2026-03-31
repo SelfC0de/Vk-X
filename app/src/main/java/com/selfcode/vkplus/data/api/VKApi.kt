@@ -123,6 +123,24 @@ interface VKApi {
         @Query("v") version: String = "5.199"
     ): VKResponse<VKWallPostResult>
 
+    @GET("messages.delete")
+    suspend fun deleteMessage(
+        @Query("message_ids") messageIds: String,
+        @Query("delete_for_all") deleteForAll: Int = 1,
+        @Query("peer_id") peerId: Int,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<com.google.gson.JsonElement>
+
+    @GET("messages.edit")
+    suspend fun editMessage(
+        @Query("peer_id") peerId: Int,
+        @Query("message_id") messageId: Int,
+        @Query("message") message: String,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<Int>
+
     @GET("messages.getLongPollServer")
     suspend fun getLongPollServer(
         @Query("lp_version") lpVersion: Int = 3,

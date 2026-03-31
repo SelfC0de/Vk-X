@@ -70,6 +70,11 @@ private fun PrivacyTab(state: SettingsUiState, vm: SettingsViewModel, onAntiScre
                 "Просмотр историй без отправки stories.markAsViewed", state.ghostStory, vm::setGhostStory)
         }
 
+        SettingsSection("🖥 Защита от фингерпринтинга") {
+            SettingsToggle(Icons.Filled.Refresh, "Hardware Spoofing",
+                "Рандомизация модели, экрана, батареи в каждом запросе", state.hardwareSpoof, vm::setHardwareSpoof)
+        }
+
         SettingsSection("📡 Антислежка") {
             SettingsToggle(Icons.Filled.Notifications, "Anti-Telemetry",
                 "Блокировать stats.vk-portal.net и трекеры", state.antiTelemetry, vm::setAntiTelemetry)

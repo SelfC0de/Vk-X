@@ -1,6 +1,7 @@
 package com.selfcode.vkplus.data.api
 
 import com.selfcode.vkplus.data.local.SettingsStore
+import com.selfcode.vkplus.data.api.HardwareSpoofing
 import com.selfcode.vkplus.data.local.TypeStatus
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -72,7 +73,15 @@ class PrivacyInterceptor @Inject constructor(
         }
 
         // Anti-Ban: rotate client_id every 50 requests
-        var finalRequest = request.newBuilder().header("User-Agent", deviceUa).build()
+        // Hardware Spoofing — randomize device fingerprint per request
+        val spoofedDevice = if (hardwareSpoof) HardwareSpoofing.generate() else null
+        val effectiveUa = spoofedDevice?.userAgent ?: deviceUa
+
+        var finalRequest = request.newBuilder().header("User-Agent", effectiveUa).apply {
+            spoofedDevice?.let { device ->
+                HardwareSpoofing.generateHeaders(device).forEach { (k, v) -> header(k, v) }
+            }
+        }.build()
         if (antiBan && method.isNotEmpty()) {
             val count = requestCount.incrementAndGet()
             if (count % 50 == 0) {

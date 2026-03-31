@@ -33,6 +33,7 @@ data class SettingsUiState(
     val bypassLinks: Boolean      = true,
     val bypassShortUrl: Boolean   = false,
     val longPollOnly: Boolean     = false,
+    val hardwareSpoof: Boolean    = false,
     val deviceUa: String       = DeviceProfile.KATE.ua
 )
 
@@ -59,6 +60,7 @@ class SettingsViewModel @Inject constructor(
         settingsStore.bypassLinks,
         settingsStore.bypassShortUrl,
         settingsStore.longPollOnly,
+        settingsStore.hardwareSpoof,
         settingsStore.deviceUa
     ) { arr ->
         SettingsUiState(
@@ -78,7 +80,8 @@ class SettingsViewModel @Inject constructor(
             bypassLinks    = arr[13] as Boolean,
             bypassShortUrl = arr[14] as Boolean,
             longPollOnly   = arr[15] as Boolean,
-            deviceUa       = arr[16] as String
+            hardwareSpoof  = arr[16] as Boolean,
+            deviceUa       = arr[17] as String
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
 
@@ -97,6 +100,7 @@ class SettingsViewModel @Inject constructor(
     fun setBypassLinks(v: Boolean)        = viewModelScope.launch { settingsStore.setBypassLinks(v) }
     fun setBypassShortUrl(v: Boolean)     = viewModelScope.launch { settingsStore.setBypassShortUrl(v) }
     fun setLongPollOnly(v: Boolean)       = viewModelScope.launch { settingsStore.setLongPollOnly(v) }
+    fun setHardwareSpoof(v: Boolean)      = viewModelScope.launch { settingsStore.setHardwareSpoof(v) }
 
     fun setForceOffline(v: Boolean) = viewModelScope.launch {
         settingsStore.setForceOffline(v)

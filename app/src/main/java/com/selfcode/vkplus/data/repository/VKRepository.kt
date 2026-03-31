@@ -66,6 +66,18 @@ class VKRepository @Inject constructor(
         VKResult.Success(resp.response?.items ?: emptyList())
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
 
+    suspend fun deleteMessage(peerId: Int, messageId: Int): VKResult<Unit> = runCatching {
+        val resp = api.deleteMessage(messageIds = messageId.toString(), peerId = peerId, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(Unit)
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun editMessage(peerId: Int, messageId: Int, text: String): VKResult<Int> = runCatching {
+        val resp = api.editMessage(peerId = peerId, messageId = messageId, message = text, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response ?: 0)
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
     suspend fun sendMessage(peerId: Int, text: String): VKResult<Int> = runCatching {
         val resp = api.sendMessage(peerId = peerId, message = text, token = token())
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
