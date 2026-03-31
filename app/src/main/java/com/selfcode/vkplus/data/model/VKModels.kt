@@ -100,9 +100,21 @@ data class VKVideo(
 
 data class VKLink(
     @SerializedName("url") val url: String,
+    @SerializedName("target_url") val targetUrl: String? = null,
     @SerializedName("title") val title: String? = null,
     @SerializedName("description") val description: String? = null
-)
+) {
+    val realUrl: String get() {
+        val base = targetUrl ?: url
+        return if (base.contains("vk.com/away") || base.contains("vk.com/link")) {
+            runCatching {
+                android.net.Uri.parse(base).getQueryParameter("to")
+                    ?: android.net.Uri.parse(base).getQueryParameter("url")
+                    ?: base
+            }.getOrDefault(base)
+        } else base
+    }
+}
 
 data class VKFriendsResponse(
     @SerializedName("count") val count: Int,

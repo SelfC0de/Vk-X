@@ -123,6 +123,13 @@ interface VKApi {
         @Query("v") version: String = "5.199"
     ): VKResponse<VKWallPostResult>
 
+    @GET("execute")
+    suspend fun execute(
+        @Query("code") code: String,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<com.google.gson.JsonElement>
+
     @GET("auth.getAuthCode")
     suspend fun getQrCode(
         @Query("client_id") clientId: Int,

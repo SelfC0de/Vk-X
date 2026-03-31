@@ -110,6 +110,14 @@ private fun EngineTab(state: SettingsUiState, vm: SettingsViewModel) {
                 "Публиковать/отправлять без триггера account.setOnline", state.offlinePost, vm::setOfflinePost)
         }
 
+        SettingsSection("🕵️ Activity Bypass") {
+            SettingsToggle(Icons.Default.Visibility, "Bypass Activity Status",
+                "Загружать сообщения через execute — не триггерит Online", state.bypassActivity, vm::setBypassActivity)
+            SettingsDivider()
+            SettingsToggle(Icons.Default.Link, "Bypass Link Warning",
+                "Открывать ссылки напрямую, игнорируя vk.com/away", state.bypassLinks, vm::setBypassLinks)
+        }
+
         SettingsSection("⌨️ Type Status Changer") {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Text(

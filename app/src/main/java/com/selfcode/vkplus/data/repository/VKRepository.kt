@@ -1,5 +1,6 @@
 package com.selfcode.vkplus.data.repository
 
+import com.google.gson.Gson
 import com.selfcode.vkplus.data.api.VKApi
 import com.selfcode.vkplus.data.api.VKConversationsResponse
 import com.selfcode.vkplus.data.api.VKNewsfeedResponse
@@ -46,6 +47,17 @@ class VKRepository @Inject constructor(
         val resp = api.getConversations(token = token())
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
         VKResult.Success(resp.response ?: return VKResult.Error("Empty response"))
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun getMessagesExecute(peerId: Int): VKResult<List<VKMessage>> = runCatching {
+        val t = token()
+        // Wrap in execute to avoid triggering setOnline
+        val code = """API.messages.getHistory({"peer_id":$peerId,"count":50,"v":"5.199","access_token":"$t"})"""
+        val resp = api.execute(code = code, token = t)
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        val json = resp.response?.toString() ?: return VKResult.Error("Empty response")
+        val parsed = Gson().fromJson(json, com.selfcode.vkplus.data.api.VKHistoryResponse::class.java)
+        VKResult.Success(parsed.items)
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
 
     suspend fun getMessages(peerId: Int): VKResult<List<VKMessage>> = runCatching {

@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.selfcode.vkplus.data.model.VKDialog
 import com.selfcode.vkplus.data.model.VKMessage
 import com.selfcode.vkplus.data.model.VKUser
+import com.selfcode.vkplus.data.local.SettingsStore
 import com.selfcode.vkplus.data.repository.VKRepository
 import com.selfcode.vkplus.data.repository.VKResult
+import kotlinx.coroutines.flow.first
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +26,8 @@ data class MessagesUiState(
 
 @HiltViewModel
 class MessagesViewModel @Inject constructor(
-    private val repository: VKRepository
+    private val repository: VKRepository,
+    private val settingsStore: SettingsStore
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MessagesUiState(isLoading = true))
@@ -54,7 +57,9 @@ class MessagesViewModel @Inject constructor(
     fun loadMessages(peerId: Int) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isChatLoading = true)
-            when (val r = repository.getMessages(peerId)) {
+            val useExecute = settingsStore.bypassActivity.first()
+            val r = if (useExecute) repository.getMessagesExecute(peerId) else repository.getMessages(peerId)
+            when (r) {
                 is VKResult.Success -> {
                     val current = _uiState.value.chatMessages.toMutableMap()
                     current[peerId] = r.data.reversed()
