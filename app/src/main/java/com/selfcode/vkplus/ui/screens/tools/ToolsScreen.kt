@@ -40,7 +40,7 @@ fun ToolsScreen(viewModel: ToolsViewModel = hiltViewModel()) {
 private fun RemoveBannedCard(state: ToolsUiState, vm: ToolsViewModel) {
     Column(modifier = Modifier.padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.PersonRemove, null, tint = ErrorRed, modifier = Modifier.size(22.dp))
+            Icon(Icons.Default.Person, null, tint = ErrorRed, modifier = Modifier.size(22.dp))
             Spacer(Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text("Remove Banned Users", color = OnSurface, fontSize = 15.sp, fontWeight = FontWeight.Medium)
@@ -83,7 +83,7 @@ private fun RemoveBannedCard(state: ToolsUiState, vm: ToolsViewModel) {
                 Spacer(Modifier.height(12.dp))
                 Button(onClick = { vm.removeAllBanned() }, modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = ErrorRed), shape = RoundedCornerShape(8.dp)) {
-                    Icon(Icons.Default.DeleteForever, null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Delete, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
                     Text("Удалить всех (${state.bannedFriends.size})", color = OnSurface)
                 }
@@ -105,7 +105,7 @@ private fun RemoveBannedCard(state: ToolsUiState, vm: ToolsViewModel) {
 private fun GiftAnonymityCard(state: ToolsUiState, vm: ToolsViewModel) {
     Column(modifier = Modifier.padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.CardGiftcard, null, tint = CyberAccent, modifier = Modifier.size(22.dp))
+            Icon(Icons.Default.Star, null, tint = CyberAccent, modifier = Modifier.size(22.dp))
             Spacer(Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text("Bypass Gift Anonymity", color = OnSurface, fontSize = 15.sp, fontWeight = FontWeight.Medium)
@@ -155,7 +155,7 @@ private fun GiftAnonymityCard(state: ToolsUiState, vm: ToolsViewModel) {
 private fun BypassInfoCard() {
     Column(modifier = Modifier.padding(vertical = 4.dp)) {
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.ContentCopy, null, tint = CyberBlue, modifier = Modifier.size(22.dp))
+            Icon(Icons.Default.Share, null, tint = CyberBlue, modifier = Modifier.size(22.dp))
             Spacer(Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text("Bypass Copy + Reposts", color = OnSurface, fontSize = 15.sp, fontWeight = FontWeight.Medium)
@@ -165,7 +165,7 @@ private fun BypassInfoCard() {
         }
         SettingsDivider()
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.HowToVote, null, tint = CyberBlue, modifier = Modifier.size(22.dp))
+            Icon(Icons.Default.ThumbUp, null, tint = CyberBlue, modifier = Modifier.size(22.dp))
             Spacer(Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text("Read Receipts", color = OnSurface, fontSize = 15.sp, fontWeight = FontWeight.Medium)

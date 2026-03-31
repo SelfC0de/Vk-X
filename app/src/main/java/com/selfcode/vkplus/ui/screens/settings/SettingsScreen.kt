@@ -57,24 +57,24 @@ private fun PrivacyTab(state: SettingsUiState, vm: SettingsViewModel, onAntiScre
             SettingsToggle(Icons.Default.VisibilityOff, "UnRead",
                 "Сообщения остаются непрочитанными", state.unRead, vm::setUnRead)
             SettingsDivider()
-            SettingsToggle(Icons.Default.KeyboardHide, "UnType",
+            SettingsToggle(Icons.Default.Clear, "UnType",
                 "Не отправлять «Печатает...» (блокировка)", state.unType, vm::setUnType)
             SettingsDivider()
             SettingsToggle(Icons.Default.WifiOff, "Force Offline",
                 "Каждые 5 мин отправляет account.setOffline", state.forceOffline, vm::setForceOffline)
             SettingsDivider()
-            SettingsToggle(Icons.Default.PersonOff, "Ghost Online",
+            SettingsToggle(Icons.Default.Person, "Ghost Online",
                 "Никогда не отправлять account.setOnline", state.ghostOnline, vm::setGhostOnline)
             SettingsDivider()
-            SettingsToggle(Icons.Default.HideImage, "Ghost View Story",
+            SettingsToggle(Icons.Default.VisibilityOff, "Ghost View Story",
                 "Просмотр историй без отправки stories.markAsViewed", state.ghostStory, vm::setGhostStory)
         }
 
         SettingsSection("📡 Антислежка") {
-            SettingsToggle(Icons.Default.TrackChanges, "Anti-Telemetry",
+            SettingsToggle(Icons.Default.Notifications, "Anti-Telemetry",
                 "Блокировать stats.vk-portal.net и трекеры", state.antiTelemetry, vm::setAntiTelemetry)
             SettingsDivider()
-            SettingsToggle(Icons.Default.NoPhotography, "Anti Screen Rec",
+            SettingsToggle(Icons.Default.Lock, "Anti Screen Rec",
                 "Чёрный экран при скриншоте и записи", state.antiScreen) {
                 vm.setAntiScreen(it); onAntiScreenChanged(it)
             }
@@ -103,10 +103,10 @@ private fun EngineTab(state: SettingsUiState, vm: SettingsViewModel) {
         }
 
         SettingsSection("🔄 Anti-Ban Engine") {
-            SettingsToggle(Icons.Default.Autorenew, "Anti-Ban Engine",
+            SettingsToggle(Icons.Default.Refresh, "Anti-Ban Engine",
                 "Авторотация client_id при капче/rate limit", state.antiBan, vm::setAntiBan)
             SettingsDivider()
-            SettingsToggle(Icons.Default.CloudOff, "Offline Post",
+            SettingsToggle(Icons.Default.Warning, "Offline Post",
                 "Публиковать/отправлять без триггера account.setOnline", state.offlinePost, vm::setOfflinePost)
         }
 
@@ -114,13 +114,13 @@ private fun EngineTab(state: SettingsUiState, vm: SettingsViewModel) {
             SettingsToggle(Icons.Default.Visibility, "Bypass Activity Status",
                 "Загружать сообщения через execute — не триггерит Online", state.bypassActivity, vm::setBypassActivity)
             SettingsDivider()
-            SettingsToggle(Icons.Default.Launch, "Bypass Link Warning",
+            SettingsToggle(Icons.Default.ExitToApp, "Bypass Link Warning",
                 "Открывать ссылки напрямую, игнорируя vk.com/away", state.bypassLinks, vm::setBypassLinks)
             SettingsDivider()
-            SettingsToggle(Icons.Default.FindReplace, "Bypass Link Shorter",
+            SettingsToggle(Icons.Default.Refresh, "Bypass Link Shorter",
                 "HEAD-запрос к vk.cc до клика — показывает реальный URL", state.bypassShortUrl, vm::setBypassShortUrl)
             SettingsDivider()
-            SettingsToggle(Icons.Default.WifiTethering, "LongPoll Only Mode",
+            SettingsToggle(Icons.Default.Wifi, "LongPoll Only Mode",
                 "Получать сообщения без setOnline — вечный оффлайн при чтении", state.longPollOnly, vm::setLongPollOnly)
         }
 

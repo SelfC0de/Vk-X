@@ -205,7 +205,7 @@ fun PostCard(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = androidx.compose.material.icons.Icons.Default.Launch,
+                                imageVector = androidx.compose.material.icons.Icons.Default.ExitToApp,
                                 contentDescription = null,
                                 tint = CyberBlue,
                                 modifier = Modifier.size(16.dp)
@@ -238,7 +238,7 @@ fun PostCard(
                 modifier = Modifier.clickable { onLike() }
             ) {
                 Icon(
-                    imageVector = if (liked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                    imageVector = if (liked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                     contentDescription = null,
                     tint = if (liked) ErrorRed else OnSurfaceMuted,
                     modifier = Modifier.size(18.dp)
