@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -53,11 +55,33 @@ fun MessagesScreen(
             }
             state.dialogs.isEmpty() -> Text("Нет диалогов", color = OnSurfaceMuted, modifier = Modifier.align(Alignment.Center))
             else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
+                // Pinned Favourites
                 item {
-                    // Pull hint
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                            .clickable { onOpenChat(-1, "Избранное", null) }
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier.size(52.dp)
+                                .background(CyberBlue.copy(alpha = 0.15f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Filled.Star, null, tint = CyberBlue, modifier = Modifier.size(26.dp))
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Избранное", color = OnSurface, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                            Text("Сохранённые сообщения", color = OnSurfaceMuted, fontSize = 13.sp)
+                        }
+                    }
+                    HorizontalDivider(color = Divider.copy(alpha = 0.5f), modifier = Modifier.padding(start = 76.dp))
+                }
+                item {
                     Box(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), contentAlignment = Alignment.Center) {
                         TextButton(onClick = { isRefreshing = true }) {
-                            Text("Обновить", color = CyberBlue, fontSize = 12.sp)
+                            Text("↻  Обновить", color = CyberBlue, fontSize = 12.sp)
                         }
                     }
                 }

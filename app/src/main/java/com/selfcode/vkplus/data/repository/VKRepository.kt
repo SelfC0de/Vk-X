@@ -117,8 +117,8 @@ class VKRepository @Inject constructor(
     suspend fun getUserStickers(userId: Int): VKResult<List<String>> = runCatching {
         val resp = api.getUserStickers(userId = userId, token = token())
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
-        val packs = resp.response?.items?.mapNotNull { it.pack?.title } ?: emptyList()
-        VKResult.Success(if (packs.isEmpty()) listOf("Стикерпаки не найдены") else packs)
+        val packs = resp.response?.items?.map { it.pack?.title?.takeIf { t -> t.isNotBlank() } ?: it.title.takeIf { t -> t.isNotBlank() } ?: "Pack #${it.id}" } ?: emptyList()
+        VKResult.Success(if (packs.isEmpty()) listOf("Стикерпаки не найдены или доступ закрыт") else packs)
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
 
     suspend fun checkGroupMembership(userId: Int, groupId: Int): VKResult<Pair<Boolean, String>> = runCatching {

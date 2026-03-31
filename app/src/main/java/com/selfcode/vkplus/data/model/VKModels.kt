@@ -21,12 +21,27 @@ data class VKUser(
     @SerializedName("online") val online: Int = 0,
     @SerializedName("status") val status: String? = null,
     @SerializedName("city") val city: VKCity? = null,
-    @SerializedName("deactivated") val deactivated: String? = null
+    @SerializedName("deactivated") val deactivated: String? = null,
+    @SerializedName("last_seen") val lastSeen: VKLastSeen? = null,
+    @SerializedName("followers_count") val followersCount: Int = 0,
+    @SerializedName("counters") val counters: VKCounters? = null
 ) {
     val fullName get() = "$firstName $lastName"
     val isOnline get() = online == 1
     val isBanned get() = deactivated != null
 }
+
+data class VKLastSeen(
+    @SerializedName("time") val time: Long = 0,
+    @SerializedName("platform") val platform: Int = 0
+)
+
+data class VKCounters(
+    @SerializedName("friends") val friends: Int = 0,
+    @SerializedName("followers") val followers: Int = 0,
+    @SerializedName("photos") val photos: Int = 0,
+    @SerializedName("videos") val videos: Int = 0
+)
 
 data class VKCity(
     @SerializedName("id") val id: Int,

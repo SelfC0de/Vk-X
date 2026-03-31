@@ -17,7 +17,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -160,6 +163,19 @@ fun UserProfileScreen(
                         if (u.occupation != null) {
                             val label = if (u.occupation.type == "work") "Работа" else "Учёба"
                             ProfileInfoRow(Icons.Filled.Settings, label, u.occupation.name)
+                        }
+                        // Numeric ID with copy
+                        val clipboard = LocalClipboardManager.current
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 7.dp)) {
+                            Icon(Icons.Filled.Info, null, tint = CyberBlue, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("ID страницы", color = OnSurfaceMuted, fontSize = 11.sp)
+                                Text("${u.id}", color = OnSurface, fontSize = 14.sp)
+                            }
+                            IconButton(onClick = { clipboard.setText(AnnotatedString("${u.id}")) }, modifier = Modifier.size(28.dp)) {
+                                Icon(Icons.Filled.Share, null, tint = OnSurfaceMuted, modifier = Modifier.size(14.dp))
+                            }
                         }
                         if (u.followersCount > 0) ProfileInfoRow(Icons.Filled.People, "Подписчики", formatCount(u.followersCount))
 

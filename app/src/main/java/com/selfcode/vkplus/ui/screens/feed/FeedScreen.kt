@@ -2,6 +2,8 @@ package com.selfcode.vkplus.ui.screens.feed
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,6 +14,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
@@ -21,6 +24,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -31,6 +35,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.selfcode.vkplus.data.model.VKPost
 import com.selfcode.vkplus.ui.theme.*
+import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -39,7 +44,9 @@ import java.util.*
 fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
+    var isRefreshing by remember { mutableStateOf(false) }
 
+    // Auto-refresh on launch
     val shouldLoadMore by remember {
         derivedStateOf {
             val last = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
@@ -47,10 +54,22 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
             last >= total - 5 && !state.isLoadingMore
         }
     }
-
     LaunchedEffect(shouldLoadMore) {
         if (shouldLoadMore && state.nextFrom != null) viewModel.loadMore()
     }
+
+    LaunchedEffect(isRefreshing) {
+        if (isRefreshing) {
+            viewModel.loadFeed()
+            delay(800)
+            isRefreshing = false
+        }
+    }
+
+    // Spinning icon animation
+    val rotation by rememberInfiniteTransition(label = "spin").animateFloat(
+        0f, 360f, infiniteRepeatable(tween(800, easing = LinearEasing)), label = "rot"
+    )
 
     Box(modifier = Modifier.fillMaxSize().background(Background)) {
         when {
@@ -69,13 +88,6 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
                 }
             }
             else -> LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
-                item {
-                    Box(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), contentAlignment = Alignment.Center) {
-                        TextButton(onClick = { viewModel.loadFeed() }) {
-                            Text("↻  Обновить ленту", color = CyberBlue, fontSize = 12.sp)
-                        }
-                    }
-                }
                 items(state.posts, key = { "${it.ownerId}_${it.id}" }) { post ->
                     PostCard(
                         post = post,
@@ -92,6 +104,22 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
                     }
                 }
             }
+        }
+
+        // FAB refresh button
+        FloatingActionButton(
+            onClick = { if (!isRefreshing) isRefreshing = true },
+            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp).size(48.dp),
+            containerColor = CyberBlue,
+            contentColor = Background,
+            shape = CircleShape
+        ) {
+            Icon(
+                Icons.Filled.Refresh, null,
+                modifier = Modifier.size(22.dp).then(
+                    if (isRefreshing) Modifier.rotate(rotation) else Modifier
+                )
+            )
         }
     }
 }
@@ -110,7 +138,6 @@ fun PostCard(post: VKPost, authorName: String, authorPhoto: String?, onLike: () 
     val date = remember(post.date) {
         SimpleDateFormat("d MMM, HH:mm", Locale("ru")).format(Date(post.date * 1000))
     }
-
     Column(
         modifier = Modifier.fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 6.dp)
@@ -118,42 +145,33 @@ fun PostCard(post: VKPost, authorName: String, authorPhoto: String?, onLike: () 
             .padding(12.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            AsyncImage(
-                model = authorPhoto, contentDescription = null,
+            AsyncImage(model = authorPhoto, contentDescription = null,
                 modifier = Modifier.size(40.dp).clip(CircleShape).background(SurfaceVariant),
-                contentScale = ContentScale.Crop
-            )
+                contentScale = ContentScale.Crop)
             Spacer(Modifier.width(10.dp))
             Column {
                 Text(authorName, color = OnSurface, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(date, color = OnSurfaceMuted, fontSize = 12.sp)
             }
         }
-
         if (post.text.isNotBlank()) {
             Spacer(Modifier.height(10.dp))
             Text(post.text, color = OnSurface, fontSize = 14.sp, lineHeight = 20.sp, maxLines = 10, overflow = TextOverflow.Ellipsis)
         }
-
         post.attachments?.forEach { attachment ->
             when (attachment.type) {
                 "photo" -> attachment.photo?.bestSize()?.let { photo ->
                     Spacer(Modifier.height(8.dp))
-                    AsyncImage(
-                        model = photo.url, contentDescription = null,
+                    AsyncImage(model = photo.url, contentDescription = null,
                         modifier = Modifier.fillMaxWidth().heightIn(max = 300.dp).clip(RoundedCornerShape(8.dp)),
-                        contentScale = ContentScale.Crop
-                    )
+                        contentScale = ContentScale.Crop)
                 }
                 "link" -> attachment.link?.let { link ->
                     Spacer(Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth()
-                            .background(SurfaceVariant, RoundedCornerShape(8.dp))
-                            .clickable { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link.realUrl))) }
-                            .padding(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(modifier = Modifier.fillMaxWidth()
+                        .background(SurfaceVariant, RoundedCornerShape(8.dp))
+                        .clickable { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link.realUrl))) }
+                        .padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Filled.Repeat, null, tint = CyberBlue, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(8.dp))
                         Column {
@@ -165,15 +183,14 @@ fun PostCard(post: VKPost, authorName: String, authorPhoto: String?, onLike: () 
                 else -> {}
             }
         }
-
         Spacer(Modifier.height(10.dp))
         HorizontalDivider(color = Divider, thickness = 0.5.dp)
         Spacer(Modifier.height(8.dp))
-
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
             val liked = post.likes?.isLiked == true
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { onLike() }) {
-                Icon(if (liked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder, null, tint = if (liked) ErrorRed else OnSurfaceMuted, modifier = Modifier.size(18.dp))
+                Icon(if (liked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder, null,
+                    tint = if (liked) ErrorRed else OnSurfaceMuted, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(4.dp))
                 Text("${post.likes?.count ?: 0}", color = if (liked) ErrorRed else OnSurfaceMuted, fontSize = 13.sp)
             }

@@ -25,7 +25,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.selfcode.vkplus.ui.theme.*
@@ -35,24 +34,18 @@ fun AboutScreen() {
     val uriHandler = LocalUriHandler.current
 
     val infiniteTransition = rememberInfiniteTransition(label = "bg")
-    val glowAlpha by infiniteTransition.animateFloat(
-        0.15f, 0.3f,
-        infiniteRepeatable(tween(2500, easing = EaseInOutSine), RepeatMode.Reverse), label = "glow"
-    )
-    val pulseScale by infiniteTransition.animateFloat(
-        0.97f, 1.03f,
-        infiniteRepeatable(tween(2000, easing = EaseInOutSine), RepeatMode.Reverse), label = "pulse"
-    )
+    val glowAlpha by infiniteTransition.animateFloat(0.15f, 0.3f,
+        infiniteRepeatable(tween(2500, easing = EaseInOutSine), RepeatMode.Reverse), label = "glow")
+    val pulseScale by infiniteTransition.animateFloat(0.97f, 1.03f,
+        infiniteRepeatable(tween(2000, easing = EaseInOutSine), RepeatMode.Reverse), label = "pulse")
 
-    var contentVisible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { contentVisible = true }
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { visible = true }
 
     Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF060A14), Background)))) {
-        Box(
-            modifier = Modifier.size(320.dp).align(Alignment.TopCenter).offset(y = 40.dp)
-                .scale(pulseScale).alpha(glowAlpha).blur(100.dp)
-                .background(Brush.radialGradient(listOf(CyberBlue, Color.Transparent)), CircleShape)
-        )
+        Box(modifier = Modifier.size(320.dp).align(Alignment.TopCenter).offset(y = 40.dp)
+            .scale(pulseScale).alpha(glowAlpha).blur(100.dp)
+            .background(Brush.radialGradient(listOf(CyberBlue, Color.Transparent)), CircleShape))
 
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp),
@@ -60,7 +53,8 @@ fun AboutScreen() {
         ) {
             Spacer(Modifier.height(40.dp))
 
-            AnimatedVisibility(contentVisible, enter = fadeIn(tween(600)) + scaleIn(tween(600, easing = EaseOutBack))) {
+            // Avatar
+            AnimatedVisibility(visible, enter = fadeIn(tween(600)) + scaleIn(tween(600, easing = EaseOutBack))) {
                 Box(contentAlignment = Alignment.Center) {
                     Box(modifier = Modifier.size(110.dp).scale(pulseScale).alpha(0.25f).blur(24.dp)
                         .background(Brush.radialGradient(listOf(CyberBlue, Color.Transparent)), CircleShape))
@@ -77,57 +71,41 @@ fun AboutScreen() {
 
             Spacer(Modifier.height(20.dp))
 
-            AnimatedVisibility(contentVisible, enter = fadeIn(tween(700, 200)) + slideInVertically(tween(700, 200)) { it / 2 }) {
+            AnimatedVisibility(visible, enter = fadeIn(tween(700, 200)) + slideInVertically(tween(700, 200)) { it / 2 }) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("SelfCode", color = OnSurface, fontSize = 26.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     Spacer(Modifier.height(4.dp))
-                    Text("Разработчик · selfcode_dev", color = OnSurfaceMuted, fontSize = 14.sp)
-                    Spacer(Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        DevTag("Android"); DevTag("Kotlin"); DevTag("Python")
-                    }
+                    Text("selfcode_dev", color = OnSurfaceMuted, fontSize = 14.sp)
                 }
             }
 
             Spacer(Modifier.height(32.dp))
 
-            AnimatedVisibility(contentVisible, enter = fadeIn(tween(600, 400)) + slideInVertically(tween(600, 400)) { it / 3 }) {
+            AnimatedVisibility(visible, enter = fadeIn(tween(600, 400)) + slideInVertically(tween(600, 400)) { it / 3 }) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    SectionLabel("Соцсети и контакты")
-                    LinkCard(Icons.Filled.Person, "ВКонтакте", "vk.com/selfcode_dev", Color(0xFF4C75A3)) { uriHandler.openUri("https://vk.com/selfcode_dev") }
-                    LinkCard(Icons.Filled.Send, "Telegram", "t.me/selfcode_dev", Color(0xFF2AABEE)) { uriHandler.openUri("https://t.me/selfcode_dev") }
-                    Spacer(Modifier.height(4.dp))
-                    SectionLabel("Проекты и код")
-                    LinkCard(Icons.Filled.Star, "GitHub", "github.com/SelfC0de", Color(0xFFE8E8E8)) { uriHandler.openUri("https://github.com/SelfC0de") }
-                    LinkCard(Icons.Filled.Edit, "GitHub Gist", "gist.github.com/SelfC0de", Color(0xFF8B949E)) { uriHandler.openUri("https://gist.github.com/SelfC0de") }
-                }
-            }
-
-            Spacer(Modifier.height(28.dp))
-
-            AnimatedVisibility(contentVisible, enter = fadeIn(tween(600, 600))) {
-                Column(
-                    modifier = Modifier.fillMaxWidth()
-                        .background(Brush.verticalGradient(listOf(SurfaceVariant, Color(0xFF0F1520))), RoundedCornerShape(16.dp))
-                        .border(0.5.dp, Divider, RoundedCornerShape(16.dp))
-                        .padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text("VK+", color = CyberBlue, fontSize = 22.sp, fontWeight = FontWeight.Bold, letterSpacing = 4.sp)
-                    Spacer(Modifier.height(6.dp))
-                    Text("Кастомный клиент ВКонтакте\nс расширенной приватностью и функционалом",
-                        color = OnSurfaceMuted, fontSize = 13.sp, textAlign = TextAlign.Center, lineHeight = 18.sp)
-                    Spacer(Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        DevTag("v1.0"); DevTag("Open Source"); DevTag("Kate API")
+                    SectionLabel("Ссылки и контакты")
+                    LinkCard(Icons.Filled.Person, "ВКонтакте", "vk.com/selfcode_dev", Color(0xFF4C75A3)) {
+                        uriHandler.openUri("https://vk.com/selfcode_dev")
+                    }
+                    LinkCard(Icons.Filled.Send, "Telegram", "t.me/selfcode_dev", Color(0xFF2AABEE)) {
+                        uriHandler.openUri("https://t.me/selfcode_dev")
+                    }
+                    LinkCard(Icons.Filled.Star, "GitHub", "github.com/SelfC0de", Color(0xFFE8E8E8)) {
+                        uriHandler.openUri("https://github.com/SelfC0de")
+                    }
+                    LinkCard(Icons.Filled.Edit, "GitHub Gist", "gist.github.com/SelfC0de", Color(0xFF8B949E)) {
+                        uriHandler.openUri("https://gist.github.com/SelfC0de")
                     }
                 }
             }
 
-            Spacer(Modifier.height(20.dp))
-            AnimatedVisibility(contentVisible, enter = fadeIn(tween(500, 800))) {
-                Text("Made with ❤️ by SelfCode · 2026", color = OnSurfaceMuted.copy(alpha = 0.4f), fontSize = 11.sp)
+            Spacer(Modifier.height(40.dp))
+
+            AnimatedVisibility(visible, enter = fadeIn(tween(500, 800))) {
+                Text("Made with ❤️ by SelfCode · 2026",
+                    color = OnSurfaceMuted.copy(alpha = 0.4f), fontSize = 11.sp, letterSpacing = 0.5.sp)
             }
+
             Spacer(Modifier.height(32.dp))
         }
     }
@@ -141,14 +119,6 @@ private fun SectionLabel(text: String) = Text(
 )
 
 @Composable
-private fun DevTag(text: String) = Box(
-    modifier = Modifier
-        .background(CyberBlue.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-        .border(0.5.dp, CyberBlue.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
-        .padding(horizontal = 10.dp, vertical = 4.dp)
-) { Text(text, color = CyberBlue, fontSize = 11.sp, fontWeight = FontWeight.Medium) }
-
-@Composable
 private fun LinkCard(icon: ImageVector, label: String, value: String, color: Color, onClick: () -> Unit) {
     val infiniteTransition = rememberInfiniteTransition(label = "card")
     val borderAlpha by infiniteTransition.animateFloat(0.2f, 0.5f,
@@ -160,7 +130,8 @@ private fun LinkCard(icon: ImageVector, label: String, value: String, color: Col
             .clickable(onClick = onClick).padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(modifier = Modifier.size(40.dp).background(color.copy(alpha = 0.15f), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier.size(40.dp).background(color.copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
+            contentAlignment = Alignment.Center) {
             Icon(icon, null, tint = color, modifier = Modifier.size(20.dp))
         }
         Spacer(Modifier.width(14.dp))

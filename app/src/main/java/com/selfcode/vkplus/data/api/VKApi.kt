@@ -9,7 +9,7 @@ interface VKApi {
     @GET("users.get")
     suspend fun getUsers(
         @Query("user_ids") userIds: String? = null,
-        @Query("fields") fields: String = "photo_200,photo_100,online,status,city",
+        @Query("fields") fields: String = "photo_200,photo_100,online,last_seen,status,city,followers_count,counters",
         @Query("access_token") token: String,
         @Query("v") version: String = "5.199"
     ): VKResponse<List<VKUser>>
@@ -144,14 +144,23 @@ interface VKApi {
     @GET("users.get")
     suspend fun getUserExtended(
         @Query("user_ids") userIds: String,
-        @Query("fields") fields: String = "photo_200,photo_100,online,status,city,bdate,followers_count,counters,occupation,relation",
+        @Query("fields") fields: String = "photo_200,photo_100,online,last_seen,status,city,bdate,followers_count,counters,occupation,relation",
         @Query("access_token") token: String,
         @Query("v") version: String = "5.199"
     ): VKResponse<List<VKUserExtended>>
 
-    @GET("stickers.getUserStickers")
+    @GET("store.getStickersKeywords")
+    suspend fun getStickersKeywords(
+        @Query("user_id") userId: Int,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<VKStickersResponse>
+
+    @GET("store.getProducts")
     suspend fun getUserStickers(
         @Query("user_id") userId: Int,
+        @Query("type") type: String = "stickers",
+        @Query("filters") filters: String = "purchased",
         @Query("access_token") token: String,
         @Query("v") version: String = "5.199"
     ): VKResponse<VKStickersResponse>
@@ -287,6 +296,9 @@ data class VKStickersResponse(
 )
 
 data class VKStickerPack(
+    @com.google.gson.annotations.SerializedName("id") val id: Int = 0,
+    @com.google.gson.annotations.SerializedName("title") val title: String = "",
+    @com.google.gson.annotations.SerializedName("type") val type: String = "",
     @com.google.gson.annotations.SerializedName("pack") val pack: VKStickerPackInfo? = null
 )
 

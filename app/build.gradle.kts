@@ -74,6 +74,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.gson)
     implementation(libs.accompanist.systemuicontroller)
+    implementation(libs.accompanist.swiperefresh)
     debugImplementation(libs.androidx.ui.tooling)
     implementation(libs.zxing)
     implementation(libs.zxing.android)

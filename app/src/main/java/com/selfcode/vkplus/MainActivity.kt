@@ -119,8 +119,11 @@ fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScree
                         peerId = chatPeerId!!, onBack = { chatPeerId = null }, viewModel = msgVm
                     )
                 } else {
+                    val profileVm: com.selfcode.vkplus.ui.screens.profile.ProfileViewModel = hiltViewModel()
+                    val profileUser by profileVm.user.collectAsState()
                     MessagesScreen(viewModel = msgVm, onOpenChat = { id, name, photo ->
-                        chatPeerId = id; chatPeerName = name; chatPeerPhoto = photo
+                        val resolvedId = if (id == -1) profileUser?.id ?: id else id
+                        chatPeerId = resolvedId; chatPeerName = name; chatPeerPhoto = photo
                     })
                 }
             }
