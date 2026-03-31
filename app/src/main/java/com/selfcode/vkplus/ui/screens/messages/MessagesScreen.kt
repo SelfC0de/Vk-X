@@ -8,10 +8,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -19,132 +22,96 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.selfcode.vkplus.data.model.VKDialog
+import com.selfcode.vkplus.data.model.VKConversation
 import com.selfcode.vkplus.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MessagesScreen(viewModel: MessagesViewModel = hiltViewModel()) {
+fun MessagesScreen(
+    viewModel: MessagesViewModel = hiltViewModel(),
+    onOpenChat: (peerId: Int, name: String, photo: String?) -> Unit
+) {
     val state by viewModel.uiState.collectAsState()
-    var selectedDialog by remember { mutableStateOf<VKDialog?>(null) }
+    val pullState = rememberPullToRefreshState()
 
-    if (selectedDialog != null) {
-        val dialog = selectedDialog!!
-        val peerId = dialog.conversation.peer.id
-        val profile = state.profiles[peerId]
-        ChatScreen(
-            peerName = profile?.fullName ?: "Диалог",
-            peerPhoto = profile?.photo100,
-            peerId = peerId,
-            onBack = { selectedDialog = null },
-            viewModel = viewModel
-        )
-        return
+    if (pullState.isRefreshing) {
+        LaunchedEffect(Unit) {
+            viewModel.loadConversations()
+            pullState.endRefresh()
+        }
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(Background)) {
+    Box(
+        modifier = Modifier.fillMaxSize().background(Background)
+            .nestedScroll(pullState.nestedScrollConnection)
+    ) {
         when {
-            state.isLoading -> CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center),
-                color = CyberBlue
-            )
-            state.error != null -> Text(
-                state.error ?: "",
-                color = ErrorRed,
-                modifier = Modifier.align(Alignment.Center)
-            )
+            state.isLoading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = CyberBlue)
+            state.error != null -> Text(state.error ?: "", color = ErrorRed, modifier = Modifier.align(Alignment.Center))
+            state.conversations.isEmpty() -> Text("Нет диалогов", color = OnSurfaceMuted, modifier = Modifier.align(Alignment.Center))
             else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(state.dialogs, key = { it.conversation.peer.id }) { dialog ->
-                    DialogRow(
-                        dialog = dialog,
-                        authorName = state.profiles[dialog.conversation.peer.id]?.fullName ?: "Диалог",
-                        authorPhoto = state.profiles[dialog.conversation.peer.id]?.photo100,
-                        onClick = { selectedDialog = dialog }
-                    )
-                    HorizontalDivider(
-                        color = Divider,
-                        thickness = 0.5.dp,
-                        modifier = Modifier.padding(start = 72.dp)
-                    )
+                items(state.conversations, key = { it.peerId }) { conv ->
+                    ConversationRow(conv) { onOpenChat(conv.peerId, conv.peerName, conv.peerPhoto) }
                 }
             }
         }
+
+        PullToRefreshContainer(
+            state = pullState,
+            modifier = Modifier.align(Alignment.TopCenter),
+            containerColor = Surface,
+            contentColor = CyberBlue
+        )
     }
 }
 
 @Composable
-fun DialogRow(
-    dialog: VKDialog,
-    authorName: String,
-    authorPhoto: String?,
-    onClick: () -> Unit
-) {
-    val date = remember(dialog.lastMessage.date) {
-        SimpleDateFormat("HH:mm", Locale("ru")).format(Date(dialog.lastMessage.date * 1000))
+private fun ConversationRow(conv: VKConversation, onClick: () -> Unit) {
+    val time = remember(conv.lastMessage?.date) {
+        conv.lastMessage?.date?.let {
+            SimpleDateFormat("HH:mm", Locale("ru")).format(Date(it * 1000L))
+        } ?: ""
     }
-    val unread = dialog.conversation.unreadCount
-
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        AsyncImage(
-            model = authorPhoto,
-            contentDescription = null,
-            modifier = Modifier.size(50.dp).clip(CircleShape).background(SurfaceVariant),
-            contentScale = ContentScale.Crop
-        )
-        Spacer(Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = authorName,
-                    color = OnSurface,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(text = date, color = OnSurfaceMuted, fontSize = 12.sp)
-            }
-            Spacer(Modifier.height(3.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = dialog.lastMessage.text.ifBlank { "Вложение" },
-                    color = OnSurfaceMuted,
-                    fontSize = 13.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-                if (unread > 0) {
-                    Box(
-                        modifier = Modifier
-                            .background(CyberBlue, RoundedCornerShape(10.dp))
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                    ) {
-                        Text(
-                            text = if (unread > 99) "99+" else unread.toString(),
-                            color = Background,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+        Box {
+            AsyncImage(
+                model = conv.peerPhoto, contentDescription = null,
+                modifier = Modifier.size(52.dp).clip(CircleShape).background(SurfaceVariant),
+                contentScale = ContentScale.Crop
+            )
+            if (conv.unreadCount > 0) {
+                Box(
+                    modifier = Modifier.align(Alignment.TopEnd).size(18.dp)
+                        .background(CyberBlue, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        if (conv.unreadCount > 99) "99+" else conv.unreadCount.toString(),
+                        color = Background, fontSize = 9.sp, fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(conv.peerName, color = OnSurface, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                Spacer(Modifier.width(8.dp))
+                Text(time, color = OnSurfaceMuted, fontSize = 12.sp)
+            }
+            Spacer(Modifier.height(2.dp))
+            Text(
+                conv.lastMessage?.text?.ifBlank { "Вложение" } ?: "",
+                color = if (conv.unreadCount > 0) OnSurface else OnSurfaceMuted,
+                fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                fontWeight = if (conv.unreadCount > 0) FontWeight.Medium else FontWeight.Normal
+            )
+        }
     }
+    HorizontalDivider(color = Divider.copy(alpha = 0.5f), modifier = Modifier.padding(start = 76.dp))
 }

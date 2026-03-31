@@ -95,6 +95,12 @@ class VKRepository @Inject constructor(
         VKResult.Success(resp.response?.likes ?: 0)
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
 
+    suspend fun getUserExtended(userId: String): VKResult<com.selfcode.vkplus.data.api.VKUserExtended> = runCatching {
+        val resp = api.getUserExtended(userIds = userId, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response?.firstOrNull() ?: return VKResult.Error("Not found"))
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
     suspend fun getUserById(userId: String): VKResult<com.selfcode.vkplus.data.model.VKUser> = runCatching {
         val resp = api.getUsers(userIds = userId, token = token())
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)

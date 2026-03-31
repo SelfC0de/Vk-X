@@ -47,6 +47,8 @@ class FriendsViewModel @Inject constructor(
         }
     }
 
+    fun refresh() = loadFriends()
+
     fun setQuery(q: String) {
         _uiState.value = _uiState.value.copy(query = q)
     }

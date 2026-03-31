@@ -15,15 +15,16 @@ import javax.inject.Inject
 class ProfileViewModel @Inject constructor(
     private val repository: VKRepository
 ) : ViewModel() {
-
     private val _user = MutableStateFlow<VKUser?>(null)
     val user: StateFlow<VKUser?> = _user
-
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading
 
-    init {
+    init { loadProfile() }
+
+    fun loadProfile() {
         viewModelScope.launch {
+            _isLoading.value = true
             when (val r = repository.getCurrentUser()) {
                 is VKResult.Success -> _user.value = r.data
                 is VKResult.Error -> {}

@@ -141,6 +141,14 @@ interface VKApi {
         @Query("v") version: String = "5.199"
     ): VKResponse<Int>
 
+    @GET("users.get")
+    suspend fun getUserExtended(
+        @Query("user_ids") userIds: String,
+        @Query("fields") fields: String = "photo_200,photo_100,online,status,city,bdate,followers_count,counters,occupation,relation",
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<List<VKUserExtended>>
+
     @GET("stickers.getUserStickers")
     suspend fun getUserStickers(
         @Query("user_id") userId: Int,
@@ -289,5 +297,29 @@ data class VKStickerPackInfo(
 
 data class VKGroupFull(
     @com.google.gson.annotations.SerializedName("id") val id: Int = 0,
+    @com.google.gson.annotations.SerializedName("name") val name: String = ""
+)
+
+data class VKUserExtended(
+    @com.google.gson.annotations.SerializedName("id") val id: Int = 0,
+    @com.google.gson.annotations.SerializedName("first_name") val firstName: String = "",
+    @com.google.gson.annotations.SerializedName("last_name") val lastName: String = "",
+    @com.google.gson.annotations.SerializedName("photo_200") val photo200: String? = null,
+    @com.google.gson.annotations.SerializedName("photo_100") val photo100: String? = null,
+    @com.google.gson.annotations.SerializedName("online") val online: Int = 0,
+    @com.google.gson.annotations.SerializedName("status") val status: String? = null,
+    @com.google.gson.annotations.SerializedName("city") val city: com.selfcode.vkplus.data.model.VKCity? = null,
+    @com.google.gson.annotations.SerializedName("bdate") val bdate: String? = null,
+    @com.google.gson.annotations.SerializedName("followers_count") val followersCount: Int = 0,
+    @com.google.gson.annotations.SerializedName("occupation") val occupation: VKOccupation? = null,
+    @com.google.gson.annotations.SerializedName("relation") val relation: Int = 0,
+    @com.google.gson.annotations.SerializedName("deactivated") val deactivated: String? = null
+) {
+    val fullName get() = "$firstName $lastName".trim()
+    val isOnline get() = online == 1
+}
+
+data class VKOccupation(
+    @com.google.gson.annotations.SerializedName("type") val type: String = "",
     @com.google.gson.annotations.SerializedName("name") val name: String = ""
 )
