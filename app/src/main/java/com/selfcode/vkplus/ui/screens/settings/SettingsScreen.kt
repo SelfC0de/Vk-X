@@ -114,7 +114,7 @@ private fun EngineTab(state: SettingsUiState, vm: SettingsViewModel) {
             SettingsToggle(Icons.Default.Visibility, "Bypass Activity Status",
                 "Загружать сообщения через execute — не триггерит Online", state.bypassActivity, vm::setBypassActivity)
             SettingsDivider()
-            SettingsToggle(Icons.Default.OpenInNew, "Bypass Link Warning",
+            SettingsToggle(Icons.Default.Launch, "Bypass Link Warning",
                 "Открывать ссылки напрямую, игнорируя vk.com/away", state.bypassLinks, vm::setBypassLinks)
             SettingsDivider()
             SettingsToggle(Icons.Default.FindReplace, "Bypass Link Shorter",

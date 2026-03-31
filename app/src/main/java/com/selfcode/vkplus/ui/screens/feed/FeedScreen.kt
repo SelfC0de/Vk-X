@@ -205,7 +205,7 @@ fun PostCard(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = androidx.compose.material.icons.Icons.Default.OpenInNew,
+                                imageVector = androidx.compose.material.icons.Icons.Default.Launch,
                                 contentDescription = null,
                                 tint = CyberBlue,
                                 modifier = Modifier.size(16.dp)
