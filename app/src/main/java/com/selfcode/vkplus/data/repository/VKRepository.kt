@@ -146,6 +146,39 @@ class VKRepository @Inject constructor(
         VKResult.Success(result)
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
 
+    suspend fun getUserPlatform(userId: Int): VKResult<String> = runCatching {
+        val resp = api.getUsers(
+            userIds = userId.toString(),
+            fields = "last_seen,online",
+            token = token()
+        )
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        val user = resp.response?.firstOrNull() ?: return VKResult.Error("Пользователь не найден")
+        val sb = StringBuilder()
+        sb.appendLine("👤 ${user.fullName}")
+        if (user.isOnline) sb.appendLine("🟢 Сейчас онлайн")
+        val ls = user.lastSeen
+        if (ls != null && ls.time > 0) {
+            val platformStr = when (ls.platform) {
+                1 -> "🌐 Мобильный сайт"
+                2 -> "📱 iPhone"
+                3 -> "📱 iPad"
+                4 -> "📱 Android"
+                5 -> "📱 Windows Phone"
+                6 -> "🖥 Windows 10"
+                7 -> "🌐 Web (браузер)"
+                else -> "❓ Неизвестно"
+            }
+            sb.appendLine("📟 Платформа: $platformStr")
+            val dateStr = java.text.SimpleDateFormat("d MMM yyyy · HH:mm:ss", java.util.Locale("ru"))
+                .format(java.util.Date(ls.time * 1000))
+            sb.appendLine("🕐 Последний визит: $dateStr")
+        } else {
+            sb.appendLine("🔒 last_seen скрыт настройками приватности")
+        }
+        VKResult.Success(sb.toString().trim())
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
     suspend fun executeScript(code: String): VKResult<String> = runCatching {
         val resp = api.execute(code = code, token = token())
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)

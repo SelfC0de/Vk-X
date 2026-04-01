@@ -1,7 +1,15 @@
 package com.selfcode.vkplus.auth
 
 object VKConfig {
-    const val CLIENT_ID = 2685278
+    // Available client IDs for auth
+    const val CLIENT_ID_KATE    = 2685278  // Kate Mobile
+    const val CLIENT_ID_VINT    = 3071348  // Vint
+    const val CLIENT_ID_VKLITE  = 3140623  // VK Lite
+    const val CLIENT_ID_IPAD    = 3682744  // iPad App
+
+    // Active client (Kate Mobile by default)
+    var CLIENT_ID = CLIENT_ID_KATE
+
     const val API_VERSION = "5.199"
     const val BASE_URL = "https://api.vk.com/method/"
     const val REDIRECT_URI = "https://oauth.vk.com/blank.html"
@@ -17,4 +25,11 @@ object VKConfig {
         append("&v=$API_VERSION")
         append("&revoke=1")
     }
+
+    val clientLabels = listOf(
+        "Kate Mobile (2685278)"  to CLIENT_ID_KATE,
+        "Vint (3071348)"         to CLIENT_ID_VINT,
+        "VK Lite (3140623)"      to CLIENT_ID_VKLITE,
+        "iPad App (3682744)"     to CLIENT_ID_IPAD
+    )
 }

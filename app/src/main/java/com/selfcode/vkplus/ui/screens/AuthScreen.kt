@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.selfcode.vkplus.auth.VKConfig
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import com.selfcode.vkplus.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
