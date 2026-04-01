@@ -46,6 +46,15 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             tokenStorage.saveToken(token, userId)
             _authState.value = AuthState.Authenticated
+            // Fetch and cache user info for account switcher
+            try {
+                when (val r = repository.getCurrentUser()) {
+                    is VKResult.Success -> tokenStorage.updateAccountInfo(
+                        userId, r.data.fullName, r.data.photo100 ?: ""
+                    )
+                    else -> {}
+                }
+            } catch (e: Exception) { /* non-critical */ }
         }
     }
 

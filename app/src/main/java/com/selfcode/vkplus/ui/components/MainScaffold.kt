@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.selfcode.vkplus.data.model.VKUser
 import com.selfcode.vkplus.ui.navigation.Screen
+import com.selfcode.vkplus.auth.AccountSwitcherScreen
 import com.selfcode.vkplus.ui.theme.*
 import kotlinx.coroutines.launch
 
@@ -47,8 +48,13 @@ private val drawerItems = listOf(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScaffold(
+    onAddAccount: () -> Unit = {},
+    onSwitchAccount: () -> Unit = {},
     currentScreen: Screen,
     user: VKUser?,
+    mirrorName: String = "",
+    mirrorPhoto: String = "",
+    isMirrorActive: Boolean = false,
     onNavigate: (Screen) -> Unit,
     content: @Composable () -> Unit
 ) {
@@ -73,7 +79,7 @@ fun MainScaffold(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         AsyncImage(
-                            model = it.photo100,
+                            model = if (isMirrorActive && mirrorPhoto.isNotBlank()) mirrorPhoto else it.photo100,
                             contentDescription = null,
                             modifier = Modifier
                                 .size(52.dp)
@@ -83,12 +89,18 @@ fun MainScaffold(
                         )
                         Spacer(Modifier.width(12.dp))
                         Column {
-                            Text(
-                                it.fullName,
-                                color = OnSurface,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                Text(
+                                    if (isMirrorActive && mirrorName.isNotBlank()) mirrorName else it.fullName,
+                                    color = if (isMirrorActive) Color(0xFFFF6B35) else OnSurface,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                if (isMirrorActive) {
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("🎭", fontSize = 13.sp)
+                                }
+                            }
                             Text(
                                 if (it.isOnline) "онлайн" else "не в сети",
                                 color = if (it.isOnline) CyberBlue else OnSurfaceMuted,

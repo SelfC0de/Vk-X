@@ -47,6 +47,8 @@ class MainActivity : ComponentActivity() {
             VKPlusTheme {
                 val authViewModel: AuthViewModel = hiltViewModel()
                 val authState by authViewModel.authState.collectAsState()
+        var showAccountSwitcher by remember { mutableStateOf(false) }
+        var addingAccount by remember { mutableStateOf(false) }
 
                 // Show splash only before first auth screen
                 var splashDone by remember { mutableStateOf(authState is AuthState.Authenticated) }
@@ -105,7 +107,12 @@ fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScree
         }
     }
 
-    MainScaffold(currentScreen = currentScreen, user = currentUser, onNavigate = { currentScreen = it }) {
+    MainScaffold(
+                    onSwitchAccount = { showAccountSwitcher = true },
+                    onAddAccount = { addingAccount = true },
+                    isMirrorActive = exploitsState.mirrorActive && exploitsState.mirroredName.isNotBlank(),
+                    mirrorName = exploitsState.mirroredName,
+                    mirrorPhoto = exploitsState.mirroredPhoto,currentScreen = currentScreen, user = currentUser, onNavigate = { currentScreen = it }) {
         when (currentScreen) {
             Screen.Feed -> FeedScreen()
             Screen.Messages -> {
@@ -119,7 +126,9 @@ fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScree
                         peerId = chatPeerId!!, onBack = { chatPeerId = null }, viewModel = msgVm
                     )
                 } else {
-                    val profileVm: com.selfcode.vkplus.ui.screens.profile.ProfileViewModel = hiltViewModel()
+                    val exploitsVm: ExploitsViewModel = hiltViewModel()
+                val exploitsState by exploitsVm.uiState.collectAsState()
+                val profileVm: com.selfcode.vkplus.ui.screens.profile.ProfileViewModel = hiltViewModel()
                     val profileUser by profileVm.user.collectAsState()
                     MessagesScreen(viewModel = msgVm, onOpenChat = { id, name, photo ->
                         val resolvedId = if (id == -1) profileUser?.id ?: id else id
