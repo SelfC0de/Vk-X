@@ -58,15 +58,16 @@ class MainActivity : ComponentActivity() {
                 var splashDone by remember { mutableStateOf(false) }
 
                 when {
-                    // 1. Always show splash first (unless already authenticated on relaunch)
-                    !splashDone && authState !is AuthState.Authenticated -> {
+                    // Show splash until animation completes, regardless of auth state
+                    !splashDone -> {
                         SplashScreen(onFinished = { splashDone = true })
                     }
-
-                    // 2. Checking token — blank screen while resolving
-                    authState is AuthState.Checking -> {}
-
-                    // 3. Authenticated — main app
+                    // After splash: wait silently if still checking
+                    authState is AuthState.Checking -> {
+                        Box(modifier = androidx.compose.ui.Modifier.fillMaxSize()
+                            .background(com.selfcode.vkplus.ui.theme.Background))
+                    }
+                    // Main app
                     authState is AuthState.Authenticated -> {
                         AuthenticatedApp(
                             repository = repository,
@@ -74,8 +75,7 @@ class MainActivity : ComponentActivity() {
                             onAntiScreenChanged = { applySecureFlag(it) }
                         )
                     }
-
-                    // 4. Not authenticated
+                    // Login screen
                     authState is AuthState.Unauthenticated -> {
                         AuthScreen(
                             onTokenReceived = { uri -> authViewModel.handleRedirectUri(uri) },
@@ -84,9 +84,8 @@ class MainActivity : ComponentActivity() {
                             onAccountSwitch = { authViewModel.checkToken() }
                         )
                     }
-
-                    // 5. Invalid token
-                    authState is AuthState.InvalidToken -> {
+                    // Invalid token
+                    else -> {
                         AuthScreen(
                             onTokenReceived = { uri -> authViewModel.handleRedirectUri(uri) },
                             onQrAuthenticated = { authViewModel.checkToken() },
