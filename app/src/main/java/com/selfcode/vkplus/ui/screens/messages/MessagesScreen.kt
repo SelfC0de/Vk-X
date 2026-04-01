@@ -116,8 +116,9 @@ fun MessagesScreen(
                         val peerId = dialog.conversation.peer.id
                         val profile = state.profiles[peerId]
                         val peerName = resolveName(dialog, profile)
-                        DialogRow(dialog, peerName, profile?.photo100) {
-                            onOpenChat(peerId, peerName, profile?.photo100)
+                        val peerPhoto = resolvePhoto(dialog, profile)
+                        DialogRow(dialog, peerName, peerPhoto) {
+                            onOpenChat(peerId, peerName, peerPhoto)
                         }
                     }
                     // Load more indicator

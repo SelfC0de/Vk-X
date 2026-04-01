@@ -190,6 +190,7 @@ fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScree
             Screen.SearchPeople -> SearchPeopleScreen(onProfile = { currentScreen = Screen.Profile })
             Screen.Photos -> PhotosScreen()
             Screen.Blacklist -> BlacklistScreen()
+            Screen.VKPlus -> VKPlusScreen()
             else -> FeedScreen()
         }
     }

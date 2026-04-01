@@ -69,15 +69,19 @@ class UserProfileViewModel @Inject constructor(private val repository: VKReposit
         when (val r = repository.getLastActivity(userId)) {
             is VKResult.Success -> {
                 val activity = r.data
-                _lastActivity.value = if (activity.online == 1) "онлайн сейчас" else {
-                    val now = System.currentTimeMillis() / 1000
-                    val diff = now - activity.time
-                    when {
-                        diff < 60 -> "был(а) только что"
-                        diff < 3600 -> "был(а) ${diff / 60} мин. назад"
-                        diff < 86400 -> "был(а) сегодня в " + java.text.SimpleDateFormat("HH:mm", java.util.Locale("ru")).format(java.util.Date(activity.time * 1000))
-                        diff < 172800 -> "был(а) вчера в " + java.text.SimpleDateFormat("HH:mm", java.util.Locale("ru")).format(java.util.Date(activity.time * 1000))
-                        else -> "был(а) " + java.text.SimpleDateFormat("d MMM в HH:mm", java.util.Locale("ru")).format(java.util.Date(activity.time * 1000))
+                _lastActivity.value = when {
+                    activity.online == 1 -> "онлайн сейчас"
+                    activity.time <= 0L -> null // no data — don't show wrong date
+                    else -> {
+                        val now = System.currentTimeMillis() / 1000
+                        val diff = now - activity.time
+                        when {
+                            diff < 60 -> "был(а) только что"
+                            diff < 3600 -> "был(а) ${diff / 60} мин. назад"
+                            diff < 86400 -> "был(а) сегодня в " + java.text.SimpleDateFormat("HH:mm", java.util.Locale("ru")).format(java.util.Date(activity.time * 1000))
+                            diff < 172800 -> "был(а) вчера в " + java.text.SimpleDateFormat("HH:mm", java.util.Locale("ru")).format(java.util.Date(activity.time * 1000))
+                            else -> "был(а) " + java.text.SimpleDateFormat("d MMM в HH:mm", java.util.Locale("ru")).format(java.util.Date(activity.time * 1000))
+                        }
                     }
                 }
             }

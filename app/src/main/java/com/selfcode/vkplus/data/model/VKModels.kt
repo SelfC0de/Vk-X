@@ -156,9 +156,19 @@ data class VKDialog(
     @SerializedName("last_message") val lastMessage: VKMessage
 )
 
+data class VKChatSettings(
+    @SerializedName("title") val title: String = "",
+    @SerializedName("photo") val photo: VKChatPhoto? = null
+)
+
+data class VKChatPhoto(
+    @SerializedName("photo_100") val photo100: String? = null
+)
+
 data class VKConversation(
     @SerializedName("peer") val peer: VKPeer,
-    @SerializedName("unread_count") val unreadCount: Int = 0
+    @SerializedName("unread_count") val unreadCount: Int = 0,
+    @SerializedName("chat_settings") val chatSettings: VKChatSettings? = null
 )
 
 data class VKPeer(
