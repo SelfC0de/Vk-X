@@ -76,7 +76,8 @@ class MainActivity : ComponentActivity() {
                         AuthScreen(
                             onTokenReceived = { uri -> authViewModel.handleRedirectUri(uri) },
                             onQrAuthenticated = { authViewModel.checkToken() },
-                            onManualToken = { token -> authViewModel.saveManualToken(token) }
+                            onManualToken = { token -> authViewModel.saveManualToken(token) },
+                            onAccountSwitch = { authViewModel.checkToken() }
                         )
                     }
 
@@ -85,6 +86,7 @@ class MainActivity : ComponentActivity() {
                             onTokenReceived = { uri -> authViewModel.handleRedirectUri(uri) },
                             onQrAuthenticated = { authViewModel.checkToken() },
                             onManualToken = { token -> authViewModel.saveManualToken(token) },
+                            onAccountSwitch = { authViewModel.checkToken() },
                             invalidToken = true
                         )
                     }
