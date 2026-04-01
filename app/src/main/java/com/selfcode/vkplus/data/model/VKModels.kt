@@ -169,10 +169,14 @@ data class VKPeer(
 data class VKMessage(
     @SerializedName("id") val id: Int,
     @SerializedName("from_id") val fromId: Int,
-    @SerializedName("text") val text: String,
+    @SerializedName("text") val text: String = "",
     @SerializedName("date") val date: Long,
     @SerializedName("out") val out: Int = 0,
-    @SerializedName("attachments") val attachments: List<VKAttachment>? = null
+    @SerializedName("attachments") val attachments: List<VKAttachment>? = null,
+    @SerializedName("reply_message") val replyMessage: VKReplyMessage? = null,
+    @SerializedName("fwd_messages") val fwdMessages: List<VKMessage>? = null,
+    @SerializedName("reaction_id") val reactionId: Int = 0,
+    @SerializedName("is_deleted") val isDeleted: Int = 0
 ) {
     val isOutgoing get() = out == 1
     val voiceMessage get() = attachments?.firstOrNull { it.type == "audio_message" }?.audioMessage

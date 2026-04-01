@@ -149,6 +149,14 @@ fun UserProfileScreen(
                                 }
                             }
                         }
+                        // Last activity (only when offline)
+                        if (!u.isOnline) {
+                            Spacer(Modifier.height(3.dp))
+                            Text(
+                                lastActivity ?: "не в сети",
+                                color = OnSurfaceMuted, fontSize = 12.sp
+                            )
+                        }
                         if (!u.status.isNullOrBlank()) {
                             Spacer(Modifier.height(3.dp))
                             Text(u.status, color = OnSurfaceMuted, fontSize = 13.sp, lineHeight = 17.sp)

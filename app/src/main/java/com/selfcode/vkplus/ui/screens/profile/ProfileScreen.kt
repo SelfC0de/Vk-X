@@ -43,6 +43,8 @@ import java.util.*
 @Composable
 fun ProfileScreen(
     onLogout: () -> Unit,
+    onNavigateToPhotos: () -> Unit = {},
+    onNavigateToBlacklist: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
     messagesViewModel: MessagesViewModel = hiltViewModel(),
     exploitsViewModel: ExploitsViewModel = hiltViewModel()

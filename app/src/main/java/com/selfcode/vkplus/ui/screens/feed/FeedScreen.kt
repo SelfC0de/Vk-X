@@ -194,7 +194,7 @@ fun PostCard(post: VKPost, authorName: String, authorPhoto: String?, onLike: () 
                         Icon(Icons.Filled.Share, null, tint = CyberBlue, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(8.dp))
                         Column {
-                            Text(link.title.ifBlank { link.url }, color = OnSurface, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text((link.title?.takeIf { it.isNotBlank() } ?: link.url), color = OnSurface, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(link.url, color = OnSurfaceMuted, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }

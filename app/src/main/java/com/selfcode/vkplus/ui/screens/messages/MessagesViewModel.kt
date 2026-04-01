@@ -75,7 +75,8 @@ class MessagesViewModel @Inject constructor(
     fun loadMessages(peerId: Int) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isChatLoading = true)
-            val useExecute = settingsStore.bypassActivity.first()
+            // Always use direct API — execute bypass only works when setting enabled
+            val useExecute = try { settingsStore.bypassActivity.first() } catch (e: Exception) { false }
             val r = if (useExecute) repository.getMessagesExecute(peerId) else repository.getMessages(peerId)
             when (r) {
                 is VKResult.Success -> {

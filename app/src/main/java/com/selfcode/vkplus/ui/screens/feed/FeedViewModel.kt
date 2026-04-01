@@ -50,8 +50,8 @@ class FeedViewModel @Inject constructor(
     }
 
     private suspend fun loadFeedInternal() {
-        _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-        when (val result = repository.getNewsfeed()) {
+        _uiState.value = _uiState.value.copy(isLoading = true, error = null, nextFrom = null)
+        when (val result = repository.getNewsfeed(startFrom = null)) {
             is VKResult.Success -> {
                 val profilesMap = result.data.profiles.associateBy { it.id }
                 val groupsMap = result.data.groups.associateBy { it.id } // stored as positive, accessed as -sourceId

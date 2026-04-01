@@ -16,10 +16,11 @@ interface VKApi {
 
     @GET("newsfeed.get")
     suspend fun getNewsfeed(
-        @Query("filters") filters: String = "post",
+        @Query("filters") filters: String = "post,photo",
         @Query("count") count: Int = 30,
         @Query("start_from") startFrom: String? = null,
         @Query("fields") fields: String = "photo_100,online,status",
+        @Query("return_banned") returnBanned: Int = 0,
         @Query("access_token") token: String,
         @Query("v") version: String = "5.199"
     ): VKResponse<VKNewsfeedResponse>
@@ -55,6 +56,8 @@ interface VKApi {
     suspend fun getHistory(
         @Query("peer_id") peerId: Int,
         @Query("count") count: Int = 50,
+        @Query("extended") extended: Int = 1,
+        @Query("fields") fields: String = "photo_100",
         @Query("access_token") token: String,
         @Query("v") version: String = "5.199"
     ): VKResponse<VKHistoryResponse>
