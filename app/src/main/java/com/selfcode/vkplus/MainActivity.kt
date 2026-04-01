@@ -63,10 +63,7 @@ class MainActivity : ComponentActivity() {
                         SplashScreen(onFinished = { splashDone = true })
                     }
                     // After splash: wait silently if still checking
-                    authState is AuthState.Checking -> {
-                        Box(modifier = androidx.compose.ui.Modifier.fillMaxSize()
-                            .background(com.selfcode.vkplus.ui.theme.Background))
-                    }
+                    authState is AuthState.Checking -> {}
                     // Main app
                     authState is AuthState.Authenticated -> {
                         AuthenticatedApp(
