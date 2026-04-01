@@ -16,7 +16,6 @@ import com.selfcode.vkplus.data.repository.VKResult
 import com.selfcode.vkplus.ui.components.MainScaffold
 import com.selfcode.vkplus.ui.navigation.Screen
 import com.selfcode.vkplus.ui.screens.AuthScreen
-import com.selfcode.vkplus.ui.screens.SplashScreen
 import com.selfcode.vkplus.ui.screens.feed.FeedScreen
 import com.selfcode.vkplus.ui.screens.messages.MessagesScreen
 import com.selfcode.vkplus.ui.screens.profile.ProfileScreen
@@ -52,28 +51,16 @@ class MainActivity : ComponentActivity() {
             VKPlusTheme {
                 val authViewModel: AuthViewModel = hiltViewModel()
                 val authState by authViewModel.authState.collectAsState()
-        var showAccountSwitcher by remember { mutableStateOf(false) }
-        var addingAccount by remember { mutableStateOf(false) }
-
-                var splashDone by remember { mutableStateOf(false) }
-
-                when {
-                    // Show splash until animation completes, regardless of auth state
-                    !splashDone -> {
-                        SplashScreen(onFinished = { splashDone = true })
-                    }
-                    // After splash: wait silently if still checking
-                    authState is AuthState.Checking -> {}
-                    // Main app
-                    authState is AuthState.Authenticated -> {
+                when (authState) {
+                    is AuthState.Checking -> {} // brief blank while reading token from DataStore
+                    is AuthState.Authenticated -> {
                         AuthenticatedApp(
                             repository = repository,
                             onLogout = { authViewModel.logout() },
                             onAntiScreenChanged = { applySecureFlag(it) }
                         )
                     }
-                    // Login screen
-                    authState is AuthState.Unauthenticated -> {
+                    is AuthState.Unauthenticated -> {
                         AuthScreen(
                             onTokenReceived = { uri -> authViewModel.handleRedirectUri(uri) },
                             onQrAuthenticated = { authViewModel.checkToken() },
@@ -81,8 +68,7 @@ class MainActivity : ComponentActivity() {
                             onAccountSwitch = { authViewModel.checkToken() }
                         )
                     }
-                    // Invalid token
-                    else -> {
+                    is AuthState.InvalidToken -> {
                         AuthScreen(
                             onTokenReceived = { uri -> authViewModel.handleRedirectUri(uri) },
                             onQrAuthenticated = { authViewModel.checkToken() },
