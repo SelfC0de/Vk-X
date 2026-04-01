@@ -18,11 +18,12 @@ import com.selfcode.vkplus.ui.navigation.Screen
 import com.selfcode.vkplus.ui.screens.AuthScreen
 import com.selfcode.vkplus.ui.screens.SplashScreen
 import com.selfcode.vkplus.ui.screens.feed.FeedScreen
-import com.selfcode.vkplus.ui.screens.friends.FriendsScreen
 import com.selfcode.vkplus.ui.screens.messages.MessagesScreen
 import com.selfcode.vkplus.ui.screens.profile.ProfileScreen
 import com.selfcode.vkplus.ui.screens.settings.SettingsScreen
 import com.selfcode.vkplus.ui.screens.about.AboutScreen
+import com.selfcode.vkplus.ui.screens.friends.FriendsScreen
+import com.selfcode.vkplus.ui.screens.vkplus.VKPlusScreen
 import com.selfcode.vkplus.ui.screens.communities.CommunitiesScreen
 import com.selfcode.vkplus.ui.screens.search.SearchPeopleScreen
 import com.selfcode.vkplus.ui.screens.photos.PhotosScreen
@@ -54,12 +55,18 @@ class MainActivity : ComponentActivity() {
         var showAccountSwitcher by remember { mutableStateOf(false) }
         var addingAccount by remember { mutableStateOf(false) }
 
-                // Show splash only before first auth screen
-                var splashDone by remember { mutableStateOf(authState is AuthState.Authenticated) }
+                var splashDone by remember { mutableStateOf(false) }
 
                 when {
+                    // 1. Always show splash first (unless already authenticated on relaunch)
+                    !splashDone && authState !is AuthState.Authenticated -> {
+                        SplashScreen(onFinished = { splashDone = true })
+                    }
+
+                    // 2. Checking token — blank screen while resolving
                     authState is AuthState.Checking -> {}
 
+                    // 3. Authenticated — main app
                     authState is AuthState.Authenticated -> {
                         AuthenticatedApp(
                             repository = repository,
@@ -68,10 +75,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    !splashDone -> {
-                        SplashScreen(onFinished = { splashDone = true })
-                    }
-
+                    // 4. Not authenticated
                     authState is AuthState.Unauthenticated -> {
                         AuthScreen(
                             onTokenReceived = { uri -> authViewModel.handleRedirectUri(uri) },
@@ -81,6 +85,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
+                    // 5. Invalid token
                     authState is AuthState.InvalidToken -> {
                         AuthScreen(
                             onTokenReceived = { uri -> authViewModel.handleRedirectUri(uri) },
@@ -175,20 +180,16 @@ fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScree
                     })
                 }
             }
-            Screen.Friends -> FriendsScreen()
             Screen.Profile -> ProfileScreen(
                 onLogout = onLogout,
-                onNavigateToPhotos = { currentScreen = Screen.Photos },
-                onNavigateToBlacklist = { currentScreen = Screen.Blacklist }
+                onNavigateToPhotos = { currentScreen = Screen.VKPlus },
+                onNavigateToBlacklist = { currentScreen = Screen.Settings }
             )
-            Screen.Settings -> SettingsScreen(onAntiScreenChanged = onAntiScreenChanged)
-            Screen.Tools -> ToolsScreen()
-            Screen.About -> AboutScreen()
-            Screen.Exploits -> ExploitsScreen()
+            Screen.Friends -> FriendsScreen()
             Screen.Communities -> CommunitiesScreen()
-            Screen.SearchPeople -> SearchPeopleScreen(onProfile = { currentScreen = Screen.Profile })
-            Screen.Photos -> PhotosScreen()
-            Screen.Blacklist -> BlacklistScreen()
+            Screen.Settings -> SettingsScreen(onAntiScreenChanged = onAntiScreenChanged)
+            Screen.About -> AboutScreen()
+            Screen.VKPlus -> VKPlusScreen()
             else -> FeedScreen()
         }
     }

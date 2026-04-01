@@ -84,6 +84,7 @@ fun CommunitiesScreen(viewModel: CommunitiesViewModel = hiltViewModel()) {
         TabRow(selectedTabIndex = viewModel.selectedTab, containerColor = Surface, contentColor = CyberBlue) {
             Tab(selected = viewModel.selectedTab == 0, onClick = { viewModel.selectedTab = 0 }, text = { Text("Мои", fontSize = 13.sp) })
             Tab(selected = viewModel.selectedTab == 1, onClick = { viewModel.selectedTab = 1 }, text = { Text("Поиск", fontSize = 13.sp) })
+
         }
 
         if (viewModel.selectedTab == 1) {

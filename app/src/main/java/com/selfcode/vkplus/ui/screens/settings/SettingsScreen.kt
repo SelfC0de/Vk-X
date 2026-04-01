@@ -1,5 +1,6 @@
 package com.selfcode.vkplus.ui.screens.settings
 
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -19,6 +20,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.selfcode.vkplus.data.local.DeviceProfile
 import com.selfcode.vkplus.data.local.TypeStatus
 import com.selfcode.vkplus.ui.theme.*
+import com.selfcode.vkplus.ui.screens.profile.BlacklistScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,6 +29,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+    var settingsTab by remember { mutableIntStateOf(0) }
     var selectedTab by remember { mutableIntStateOf(0) }
 
     Column(modifier = Modifier.fillMaxSize().background(Background)) {

@@ -3,6 +3,7 @@ package com.selfcode.vkplus.ui.screens.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.selfcode.vkplus.data.model.VKUser
+import com.selfcode.vkplus.data.model.VKPhoto
 import com.selfcode.vkplus.data.repository.VKRepository
 import com.selfcode.vkplus.data.repository.VKResult
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,6 +22,15 @@ class ProfileViewModel @Inject constructor(
     val isLoading: StateFlow<Boolean> = _isLoading
 
     init { loadProfile() }
+
+    private fun loadProfilePhotos(ownerId: Int) {
+        viewModelScope.launch {
+            when (val r = repository.getAlbumPhotos(ownerId, "wall")) {
+                is VKResult.Success -> _profilePhotos.value = r.data.take(9)
+                is VKResult.Error -> {}
+            }
+        }
+    }
 
     fun saveProfile(status: String) {
         viewModelScope.launch {

@@ -16,12 +16,14 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -41,8 +43,20 @@ import java.util.*
 @Composable
 fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsState()
-    val listState = rememberLazyListState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val listState = rememberLazyListState()
+
+    // Pull to refresh state
+    val pullState = rememberPullToRefreshState()
+    if (pullState.isRefreshing) {
+        LaunchedEffect(true) {
+            viewModel.refresh()
+        }
+    }
+    // Stop indicator when refresh completes
+    LaunchedEffect(isRefreshing) {
+        if (!isRefreshing) pullState.endRefresh()
+    }
 
     // Pagination trigger
     val shouldLoadMore by remember {
@@ -54,11 +68,11 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
     }
     LaunchedEffect(shouldLoadMore) { if (shouldLoadMore) viewModel.loadMore() }
 
-    val rotation by rememberInfiniteTransition(label = "spin").animateFloat(
-        0f, 360f, infiniteRepeatable(tween(700, easing = LinearEasing)), label = "rot"
-    )
-
-    Box(modifier = Modifier.fillMaxSize().background(Background)) {
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .background(Background)
+        .nestedScroll(pullState.nestedScrollConnection)
+    ) {
         when {
             state.isLoading && state.posts.isEmpty() ->
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = CyberBlue)
@@ -75,8 +89,11 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
                     }
                 }
 
-            else -> LazyColumn(state = listState, modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 80.dp)) {
+            else -> LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 16.dp)
+            ) {
                 items(state.posts, key = { "${it.authorId}_${it.id}" }) { post ->
                     PostCard(
                         post = post,
@@ -96,24 +113,22 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
             }
         }
 
-        // Refresh FAB
-        FloatingActionButton(
-            onClick = { if (!isRefreshing) viewModel.refresh() },
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp).size(48.dp),
-            containerColor = CyberBlue, contentColor = Background, shape = CircleShape
-        ) {
-            Icon(Icons.Filled.Refresh, null, modifier = Modifier.size(22.dp)
-                .then(if (isRefreshing) Modifier.rotate(rotation) else Modifier))
-        }
+        // Pull-to-refresh indicator at top
+        PullToRefreshContainer(
+            state = pullState,
+            modifier = Modifier.align(Alignment.TopCenter),
+            containerColor = Surface,
+            contentColor = CyberBlue
+        )
     }
 }
 
 private fun resolveAuthorName(post: VKPost, state: FeedUiState): String {
     val id = post.authorId
     return when {
-        id > 0  -> state.profiles[id]?.fullName ?: "Пользователь"
-        id < 0  -> state.groups[-id]?.name      ?: "Сообщество"
-        else    -> "VK"
+        id > 0 -> state.profiles[id]?.fullName ?: "Пользователь"
+        id < 0 -> state.groups[-id]?.name ?: "Сообщество"
+        else   -> "VK"
     }
 }
 
@@ -135,13 +150,10 @@ fun PostCard(post: VKPost, authorName: String, authorPhoto: String?, onLike: () 
     val isLiked = post.likes?.isLiked == true
 
     Column(modifier = Modifier.fillMaxWidth().background(Background).padding(horizontal = 12.dp, vertical = 10.dp)) {
-        // Author header
         Row(verticalAlignment = Alignment.CenterVertically) {
-            AsyncImage(
-                model = authorPhoto, contentDescription = null,
+            AsyncImage(model = authorPhoto, contentDescription = null,
                 modifier = Modifier.size(40.dp).clip(CircleShape).background(SurfaceVariant),
-                contentScale = ContentScale.Crop
-            )
+                contentScale = ContentScale.Crop)
             Spacer(Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(authorName, color = OnSurface, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
@@ -149,7 +161,6 @@ fun PostCard(post: VKPost, authorName: String, authorPhoto: String?, onLike: () 
             }
         }
 
-        // Post text
         if (post.text.isNotBlank()) {
             Spacer(Modifier.height(8.dp))
             var expanded by remember { mutableStateOf(false) }
@@ -167,20 +178,13 @@ fun PostCard(post: VKPost, authorName: String, authorPhoto: String?, onLike: () 
             }
         }
 
-        // Attachments
         post.attachments?.forEach { attach ->
             when (attach.type) {
-                "photo" -> attach.photo?.let { photo ->
-                    val url = photo.sizes?.maxByOrNull { it.width * it.height }?.url
-                    if (url != null) {
-                        Spacer(Modifier.height(8.dp))
-                        AsyncImage(
-                            model = url, contentDescription = null,
-                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
-                                .heightIn(max = 320.dp),
-                            contentScale = ContentScale.FillWidth
-                        )
-                    }
+                "photo" -> attach.photo?.bestSize()?.url?.let { url ->
+                    Spacer(Modifier.height(8.dp))
+                    AsyncImage(model = url, contentDescription = null,
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).heightIn(max = 320.dp),
+                        contentScale = ContentScale.FillWidth)
                 }
                 "link" -> attach.link?.let { link ->
                     Spacer(Modifier.height(8.dp))
@@ -191,10 +195,12 @@ fun PostCard(post: VKPost, authorName: String, authorPhoto: String?, onLike: () 
                             .padding(10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Filled.Share, null, tint = CyberBlue, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Filled.Link, null, tint = CyberBlue, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(8.dp))
                         Column {
-                            Text((link.title?.takeIf { it.isNotBlank() } ?: link.url), color = OnSurface, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(link.title?.takeIf { it.isNotBlank() } ?: link.url,
+                                color = OnSurface, fontSize = 13.sp, fontWeight = FontWeight.Medium,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(link.url, color = OnSurfaceMuted, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
@@ -202,54 +208,32 @@ fun PostCard(post: VKPost, authorName: String, authorPhoto: String?, onLike: () 
             }
         }
 
-        // Action bar
         Spacer(Modifier.height(10.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            // Like
-            Row(verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clickable { onLike() }) {
-                Icon(
-                    if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                    null, tint = if (isLiked) ErrorRed else OnSurfaceMuted,
-                    modifier = Modifier.size(18.dp)
-                )
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { onLike() }) {
+                Icon(if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                    null, tint = if (isLiked) ErrorRed else OnSurfaceMuted, modifier = Modifier.size(18.dp))
                 if ((post.likes?.count ?: 0) > 0) {
                     Spacer(Modifier.width(4.dp))
                     Text("${post.likes?.count}", color = if (isLiked) ErrorRed else OnSurfaceMuted, fontSize = 13.sp)
                 }
             }
-            // Comments
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.ChatBubbleOutline, null, tint = OnSurfaceMuted, modifier = Modifier.size(18.dp))
-                if ((post.comments?.count ?: 0) > 0) {
-                    Spacer(Modifier.width(4.dp))
-                    Text("${post.comments?.count}", color = OnSurfaceMuted, fontSize = 13.sp)
-                }
+                if ((post.comments?.count ?: 0) > 0) { Spacer(Modifier.width(4.dp)); Text("${post.comments?.count}", color = OnSurfaceMuted, fontSize = 13.sp) }
             }
-            // Reposts
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Repeat, null, tint = OnSurfaceMuted, modifier = Modifier.size(18.dp))
-                if ((post.reposts?.count ?: 0) > 0) {
-                    Spacer(Modifier.width(4.dp))
-                    Text("${post.reposts?.count}", color = OnSurfaceMuted, fontSize = 13.sp)
-                }
+                if ((post.reposts?.count ?: 0) > 0) { Spacer(Modifier.width(4.dp)); Text("${post.reposts?.count}", color = OnSurfaceMuted, fontSize = 13.sp) }
             }
-            // Views
             post.views?.count?.let { views ->
-                if (views > 0) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.Visibility, null, tint = OnSurfaceMuted, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(formatViews(views), color = OnSurfaceMuted, fontSize = 13.sp)
-                    }
+                if (views > 0) Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Visibility, null, tint = OnSurfaceMuted, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(when { views >= 1_000_000 -> "${views/1_000_000}M"; views >= 1_000 -> "${views/1_000}K"; else -> "$views" },
+                        color = OnSurfaceMuted, fontSize = 13.sp)
                 }
             }
         }
     }
-}
-
-private fun formatViews(n: Int) = when {
-    n >= 1_000_000 -> "${n / 1_000_000}M"
-    n >= 1_000 -> "${n / 1_000}K"
-    else -> n.toString()
 }
