@@ -98,7 +98,13 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScreenChanged: (Boolean) -> Unit) {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Feed) }
-    var currentUser by remember { mutableStateOf<VKUser?>(null) }
+    var currentUser by remember { mutableStateOf<com.selfcode.vkplus.data.model.VKUser?>(null) }
+    var showAccountSwitcher by remember { mutableStateOf(false) }
+    var addingAccount by remember { mutableStateOf(false) }
+
+    val exploitsVm: com.selfcode.vkplus.ui.screens.exploits.ExploitsViewModel = hiltViewModel()
+    val exploitsState by exploitsVm.uiState.collectAsState()
+    val profileVm: com.selfcode.vkplus.ui.screens.profile.ProfileViewModel = hiltViewModel()
 
     LaunchedEffect(Unit) {
         when (val r = repository.getCurrentUser()) {
@@ -107,12 +113,43 @@ fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScree
         }
     }
 
+    // Account switcher overlay
+    if (showAccountSwitcher) {
+        com.selfcode.vkplus.auth.AccountSwitcherScreen(
+            onSwitched = { showAccountSwitcher = false },
+            onAddAccount = { showAccountSwitcher = false; addingAccount = true }
+        )
+        return
+    }
+
+    // Add new account overlay
+    if (addingAccount) {
+        com.selfcode.vkplus.ui.screens.AuthScreen(
+            onTokenReceived = { uri ->
+                val authVm: com.selfcode.vkplus.auth.AuthViewModel = hiltViewModel()
+                authVm.handleRedirectUri(uri)
+                addingAccount = false
+            },
+            onQrAuthenticated = { addingAccount = false },
+            onManualToken = { token ->
+                val authVm: com.selfcode.vkplus.auth.AuthViewModel = hiltViewModel()
+                authVm.saveManualToken(token)
+                addingAccount = false
+            }
+        )
+        return
+    }
+
     MainScaffold(
-                    onSwitchAccount = { showAccountSwitcher = true },
-                    onAddAccount = { addingAccount = true },
-                    isMirrorActive = exploitsState.mirrorActive && exploitsState.mirroredName.isNotBlank(),
-                    mirrorName = exploitsState.mirroredName,
-                    mirrorPhoto = exploitsState.mirroredPhoto,currentScreen = currentScreen, user = currentUser, onNavigate = { currentScreen = it }) {
+        onSwitchAccount = { showAccountSwitcher = true },
+        onAddAccount = { addingAccount = true },
+        isMirrorActive = exploitsState.mirrorActive && exploitsState.mirroredName.isNotBlank(),
+        mirrorName = exploitsState.mirroredName,
+        mirrorPhoto = exploitsState.mirroredPhoto,
+        currentScreen = currentScreen,
+        user = currentUser,
+        onNavigate = { currentScreen = it }
+    ) {
         when (currentScreen) {
             Screen.Feed -> FeedScreen()
             Screen.Messages -> {
@@ -120,16 +157,13 @@ fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScree
                 var chatPeerName by remember { mutableStateOf("") }
                 var chatPeerPhoto by remember { mutableStateOf<String?>(null) }
                 val msgVm: com.selfcode.vkplus.ui.screens.messages.MessagesViewModel = hiltViewModel()
+                val profileUser by profileVm.user.collectAsState()
                 if (chatPeerId != null) {
                     com.selfcode.vkplus.ui.screens.messages.ChatScreen(
                         peerName = chatPeerName, peerPhoto = chatPeerPhoto,
                         peerId = chatPeerId!!, onBack = { chatPeerId = null }, viewModel = msgVm
                     )
                 } else {
-                    val exploitsVm: ExploitsViewModel = hiltViewModel()
-                val exploitsState by exploitsVm.uiState.collectAsState()
-                val profileVm: com.selfcode.vkplus.ui.screens.profile.ProfileViewModel = hiltViewModel()
-                    val profileUser by profileVm.user.collectAsState()
                     MessagesScreen(viewModel = msgVm, onOpenChat = { id, name, photo ->
                         val resolvedId = if (id == -1) profileUser?.id ?: id else id
                         chatPeerId = resolvedId; chatPeerName = name; chatPeerPhoto = photo
@@ -146,3 +180,4 @@ fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScree
         }
     }
 }
+
