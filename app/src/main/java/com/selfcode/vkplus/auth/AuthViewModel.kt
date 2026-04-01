@@ -44,16 +44,14 @@ class AuthViewModel @Inject constructor(
         val token = params["access_token"] ?: return
         val userId = params["user_id"]?.toIntOrNull() ?: 0
         viewModelScope.launch {
-            // Save token first so getCurrentUser can use it
             tokenStorage.saveToken(token, userId)
             _authState.value = AuthState.Authenticated
-            // Fetch name+photo and update account record
+            // Fetch and cache user info for account switcher
             try {
                 when (val r = repository.getCurrentUser()) {
-                    is VKResult.Success -> {
-                        val user = r.data
-                        tokenStorage.saveToken(token, user.id, name = user.fullName, photo = user.photo100 ?: "")
-                    }
+                    is VKResult.Success -> tokenStorage.updateAccountInfo(
+                        userId, r.data.fullName, r.data.photo100 ?: ""
+                    )
                     else -> {}
                 }
             } catch (e: Exception) { /* non-critical */ }
@@ -66,8 +64,7 @@ class AuthViewModel @Inject constructor(
             tokenStorage.saveToken(token, 0)
             when (val result = repository.getCurrentUser()) {
                 is VKResult.Success -> {
-                    val user = result.data
-                    tokenStorage.saveToken(token, user.id, name = user.fullName, photo = user.photo100 ?: "")
+                    tokenStorage.saveToken(token, result.data.id)
                     _authState.value = AuthState.Authenticated
                 }
                 is VKResult.Error -> {

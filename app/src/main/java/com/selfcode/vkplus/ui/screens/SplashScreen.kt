@@ -32,12 +32,14 @@ fun SplashScreen(onFinished: () -> Unit) {
     var titleVisible    by remember { mutableStateOf(false) }
     var subtitleVisible by remember { mutableStateOf(false) }
     var linksVisible    by remember { mutableStateOf(false) }
+    var buttonVisible   by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         delay(150);  iconVisible     = true
         delay(500);  titleVisible    = true
         delay(350);  subtitleVisible = true
         delay(400);  linksVisible    = true
+        delay(500);  buttonVisible   = true
         delay(1200); onFinished()
     }
 
@@ -178,6 +180,23 @@ fun SplashScreen(onFinished: () -> Unit) {
             }
 
             Spacer(Modifier.height(52.dp))
+
+            AnimatedVisibility(
+                visible = buttonVisible,
+                enter = fadeIn(tween(500)) + scaleIn(tween(500, easing = EaseOutBack))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Brush.horizontalGradient(listOf(CyberBlue, CyberAccent, CyberBlue)))
+                        .clickable { onFinished() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Войти", color = Color(0xFF050810), fontSize = 17.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                }
+            }
         }
 
         AnimatedVisibility(

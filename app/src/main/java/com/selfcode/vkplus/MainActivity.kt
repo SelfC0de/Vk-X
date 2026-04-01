@@ -16,13 +16,16 @@ import com.selfcode.vkplus.data.repository.VKResult
 import com.selfcode.vkplus.ui.components.MainScaffold
 import com.selfcode.vkplus.ui.navigation.Screen
 import com.selfcode.vkplus.ui.screens.AuthScreen
+import com.selfcode.vkplus.ui.screens.SplashScreen
+import com.selfcode.vkplus.ui.screens.communities.CommunitiesScreen
+import com.selfcode.vkplus.ui.screens.friends.FriendsScreen
+import com.selfcode.vkplus.ui.screens.vkplus.VKPlusScreen
 import com.selfcode.vkplus.ui.screens.feed.FeedScreen
+import com.selfcode.vkplus.ui.screens.friends.FriendsScreen
 import com.selfcode.vkplus.ui.screens.messages.MessagesScreen
 import com.selfcode.vkplus.ui.screens.profile.ProfileScreen
 import com.selfcode.vkplus.ui.screens.settings.SettingsScreen
 import com.selfcode.vkplus.ui.screens.about.AboutScreen
-import com.selfcode.vkplus.ui.screens.friends.FriendsScreen
-import com.selfcode.vkplus.ui.screens.vkplus.VKPlusScreen
 import com.selfcode.vkplus.ui.screens.communities.CommunitiesScreen
 import com.selfcode.vkplus.ui.screens.search.SearchPeopleScreen
 import com.selfcode.vkplus.ui.screens.photos.PhotosScreen
@@ -51,29 +54,40 @@ class MainActivity : ComponentActivity() {
             VKPlusTheme {
                 val authViewModel: AuthViewModel = hiltViewModel()
                 val authState by authViewModel.authState.collectAsState()
-                when (authState) {
-                    is AuthState.Checking -> {} // brief blank while reading token from DataStore
-                    is AuthState.Authenticated -> {
+        var showAccountSwitcher by remember { mutableStateOf(false) }
+        var addingAccount by remember { mutableStateOf(false) }
+
+                // Show splash only before first auth screen
+                var splashDone by remember { mutableStateOf(authState is AuthState.Authenticated) }
+
+                when {
+                    authState is AuthState.Checking -> {}
+
+                    authState is AuthState.Authenticated -> {
                         AuthenticatedApp(
                             repository = repository,
                             onLogout = { authViewModel.logout() },
                             onAntiScreenChanged = { applySecureFlag(it) }
                         )
                     }
-                    is AuthState.Unauthenticated -> {
+
+                    !splashDone -> {
+                        SplashScreen(onFinished = { splashDone = true })
+                    }
+
+                    authState is AuthState.Unauthenticated -> {
                         AuthScreen(
                             onTokenReceived = { uri -> authViewModel.handleRedirectUri(uri) },
                             onQrAuthenticated = { authViewModel.checkToken() },
-                            onManualToken = { token -> authViewModel.saveManualToken(token) },
-                            onAccountSwitch = { authViewModel.checkToken() }
+                            onManualToken = { token -> authViewModel.saveManualToken(token) }
                         )
                     }
-                    is AuthState.InvalidToken -> {
+
+                    authState is AuthState.InvalidToken -> {
                         AuthScreen(
                             onTokenReceived = { uri -> authViewModel.handleRedirectUri(uri) },
                             onQrAuthenticated = { authViewModel.checkToken() },
                             onManualToken = { token -> authViewModel.saveManualToken(token) },
-                            onAccountSwitch = { authViewModel.checkToken() },
                             invalidToken = true
                         )
                     }
@@ -162,16 +176,20 @@ fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScree
                     })
                 }
             }
+            Screen.Friends -> FriendsScreen()
             Screen.Profile -> ProfileScreen(
                 onLogout = onLogout,
-                onNavigateToPhotos = { currentScreen = Screen.VKPlus },
-                onNavigateToBlacklist = { currentScreen = Screen.Settings }
+                onNavigateToPhotos = { currentScreen = Screen.Photos },
+                onNavigateToBlacklist = { currentScreen = Screen.Blacklist }
             )
-            Screen.Friends -> FriendsScreen()
-            Screen.Communities -> CommunitiesScreen()
             Screen.Settings -> SettingsScreen(onAntiScreenChanged = onAntiScreenChanged)
+            Screen.Tools -> ToolsScreen()
             Screen.About -> AboutScreen()
-            Screen.VKPlus -> VKPlusScreen()
+            Screen.Exploits -> ExploitsScreen()
+            Screen.Communities -> CommunitiesScreen()
+            Screen.SearchPeople -> SearchPeopleScreen(onProfile = { currentScreen = Screen.Profile })
+            Screen.Photos -> PhotosScreen()
+            Screen.Blacklist -> BlacklistScreen()
             else -> FeedScreen()
         }
     }
