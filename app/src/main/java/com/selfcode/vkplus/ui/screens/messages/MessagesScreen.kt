@@ -135,12 +135,21 @@ fun MessagesScreen(
     }
 }
 
-private fun resolveName(dialog: VKDialog, profile: VKUser?): String =
-    profile?.fullName ?: when (dialog.conversation.peer.type) {
-        "chat" -> "Беседа ${dialog.conversation.peer.id}"
+private fun resolveName(dialog: VKDialog, profile: VKUser?): String {
+    val chat = dialog.conversation.chatSettings
+    if (chat != null && chat.title.isNotBlank()) return chat.title
+    if (profile != null) return profile.fullName
+    return when (dialog.conversation.peer.type) {
+        "chat" -> "Беседа"
         "group" -> "Сообщество"
-        else -> "Пользователь ${dialog.conversation.peer.id}"
+        else -> "id${dialog.conversation.peer.id}"
     }
+}
+
+private fun resolvePhoto(dialog: VKDialog, profile: VKUser?): String? {
+    dialog.conversation.chatSettings?.photo?.photo100?.let { return it }
+    return profile?.photo100
+}
 
 @Composable
 private fun SearchResultRow(msg: VKMessage, profiles: Map<Int, VKUser>, onOpen: (Int) -> Unit) {
