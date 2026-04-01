@@ -16,14 +16,12 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
-import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -32,9 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.selfcode.vkplus.data.api.VKGroup
 import com.selfcode.vkplus.data.model.VKPost
-import com.selfcode.vkplus.data.model.VKUser
 import com.selfcode.vkplus.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -46,19 +42,7 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
     val isRefreshing by viewModel.isRefreshing.collectAsState()
     val listState = rememberLazyListState()
 
-    // Pull to refresh state
-    val pullState = rememberPullToRefreshState()
-    if (pullState.isRefreshing) {
-        LaunchedEffect(true) {
-            viewModel.refresh()
-        }
-    }
-    // Stop indicator when refresh completes
-    LaunchedEffect(isRefreshing) {
-        if (!isRefreshing) pullState.endRefresh()
-    }
-
-    // Pagination trigger
+    // Pagination
     val shouldLoadMore by remember {
         derivedStateOf {
             val info = listState.layoutInfo
@@ -68,11 +52,12 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
     }
     LaunchedEffect(shouldLoadMore) { if (shouldLoadMore) viewModel.loadMore() }
 
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .background(Background)
-        .nestedScroll(pullState.nestedScrollConnection)
-    ) {
+    // Spinning refresh icon animation
+    val rotation by rememberInfiniteTransition(label = "spin").animateFloat(
+        0f, 360f, infiniteRepeatable(tween(700, easing = LinearEasing)), label = "rot"
+    )
+
+    Box(modifier = Modifier.fillMaxSize().background(Background)) {
         when {
             state.isLoading && state.posts.isEmpty() ->
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = CyberBlue)
@@ -92,7 +77,7 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
             else -> LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 16.dp)
+                contentPadding = PaddingValues(bottom = 80.dp)
             ) {
                 items(state.posts, key = { "${it.authorId}_${it.id}" }) { post ->
                     PostCard(
@@ -113,13 +98,16 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
             }
         }
 
-        // Pull-to-refresh indicator at top
-        PullToRefreshContainer(
-            state = pullState,
-            modifier = Modifier.align(Alignment.TopCenter),
-            containerColor = Surface,
-            contentColor = CyberBlue
-        )
+        // Refresh FAB (rotating when active)
+        FloatingActionButton(
+            onClick = { if (!isRefreshing) viewModel.refresh() },
+            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp).size(48.dp),
+            containerColor = CyberBlue, contentColor = Background, shape = CircleShape
+        ) {
+            Icon(Icons.Filled.Refresh, null,
+                modifier = Modifier.size(22.dp)
+                    .then(if (isRefreshing) Modifier.rotate(rotation) else Modifier))
+        }
     }
 }
 
@@ -170,11 +158,9 @@ fun PostCard(post: VKPost, authorName: String, authorPhoto: String?, onLike: () 
                 color = OnSurface, fontSize = 14.sp, lineHeight = 20.sp
             )
             if (isLong) {
-                Text(
-                    text = if (expanded) "Скрыть" else "Показать полностью",
+                Text(if (expanded) "Скрыть" else "Показать полностью",
                     color = CyberBlue, fontSize = 13.sp,
-                    modifier = Modifier.clickable { expanded = !expanded }.padding(top = 4.dp)
-                )
+                    modifier = Modifier.clickable { expanded = !expanded }.padding(top = 4.dp))
             }
         }
 
@@ -213,10 +199,7 @@ fun PostCard(post: VKPost, authorName: String, authorPhoto: String?, onLike: () 
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { onLike() }) {
                 Icon(if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                     null, tint = if (isLiked) ErrorRed else OnSurfaceMuted, modifier = Modifier.size(18.dp))
-                if ((post.likes?.count ?: 0) > 0) {
-                    Spacer(Modifier.width(4.dp))
-                    Text("${post.likes?.count}", color = if (isLiked) ErrorRed else OnSurfaceMuted, fontSize = 13.sp)
-                }
+                if ((post.likes?.count ?: 0) > 0) { Spacer(Modifier.width(4.dp)); Text("${post.likes?.count}", color = if (isLiked) ErrorRed else OnSurfaceMuted, fontSize = 13.sp) }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.ChatBubbleOutline, null, tint = OnSurfaceMuted, modifier = Modifier.size(18.dp))
