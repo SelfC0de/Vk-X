@@ -179,7 +179,6 @@ fun SplashScreen(onFinished: () -> Unit) {
 
             Spacer(Modifier.height(52.dp))
         }
-        }
 
         AnimatedVisibility(
             visible = linksVisible,
