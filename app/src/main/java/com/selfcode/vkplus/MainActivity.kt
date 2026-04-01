@@ -122,18 +122,17 @@ fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScree
         return
     }
 
-    // Add new account overlay
+    // Add new account overlay - use shared authVm declared at top level
     if (addingAccount) {
+        val addAuthVm: com.selfcode.vkplus.auth.AuthViewModel = hiltViewModel()
         com.selfcode.vkplus.ui.screens.AuthScreen(
             onTokenReceived = { uri ->
-                val authVm: com.selfcode.vkplus.auth.AuthViewModel = hiltViewModel()
-                authVm.handleRedirectUri(uri)
+                addAuthVm.handleRedirectUri(uri)
                 addingAccount = false
             },
             onQrAuthenticated = { addingAccount = false },
             onManualToken = { token ->
-                val authVm: com.selfcode.vkplus.auth.AuthViewModel = hiltViewModel()
-                authVm.saveManualToken(token)
+                addAuthVm.saveManualToken(token)
                 addingAccount = false
             }
         )
