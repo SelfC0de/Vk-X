@@ -55,16 +55,22 @@ data class VKWallResponse(
 
 data class VKPost(
     @SerializedName("id") val id: Int,
-    @SerializedName("owner_id") val ownerId: Int,
-    @SerializedName("from_id") val fromId: Int,
+    @SerializedName("owner_id") val ownerId: Int = 0,
+    @SerializedName("from_id") val fromId: Int = 0,
+    @SerializedName("source_id") val sourceId: Int = 0, // newsfeed.get uses source_id
     @SerializedName("date") val date: Long,
-    @SerializedName("text") val text: String,
+    @SerializedName("text") val text: String = "",
     @SerializedName("likes") val likes: VKLikes? = null,
     @SerializedName("reposts") val reposts: VKReposts? = null,
     @SerializedName("views") val views: VKViews? = null,
     @SerializedName("attachments") val attachments: List<VKAttachment>? = null,
-    @SerializedName("comments") val comments: VKComments? = null
-)
+    @SerializedName("comments") val comments: VKComments? = null,
+    @SerializedName("post_type") val postType: String = "post",
+    @SerializedName("is_pinned") val isPinned: Int = 0
+) {
+    // newsfeed uses source_id, wall uses from_id — resolve whichever is set
+    val authorId get() = if (sourceId != 0) sourceId else if (fromId != 0) fromId else ownerId
+}
 
 data class VKLikes(
     @SerializedName("count") val count: Int,
@@ -94,17 +100,21 @@ data class VKAttachment(
 )
 
 data class VKPhoto(
-    @SerializedName("id") val id: Int,
-    @SerializedName("sizes") val sizes: List<VKPhotoSize>
+    @SerializedName("id") val id: Int = 0,
+    @SerializedName("owner_id") val ownerId: Int = 0,
+    @SerializedName("album_id") val albumId: Int = 0,
+    @SerializedName("sizes") val sizes: List<VKPhotoSize> = emptyList(),
+    @SerializedName("text") val text: String = "",
+    @SerializedName("date") val date: Long = 0
 ) {
     fun bestSize(): VKPhotoSize? = sizes.maxByOrNull { it.width * it.height }
 }
 
 data class VKPhotoSize(
-    @SerializedName("type") val type: String,
-    @SerializedName("url") val url: String,
-    @SerializedName("width") val width: Int,
-    @SerializedName("height") val height: Int
+    @SerializedName("type") val type: String = "",
+    @SerializedName("url") val url: String = "",
+    @SerializedName("width") val width: Int = 0,
+    @SerializedName("height") val height: Int = 0
 )
 
 data class VKVideo(
@@ -182,4 +192,91 @@ data class VKConversationsResponse(
     @SerializedName("items") val items: List<VKDialog> = emptyList(),
     @SerializedName("profiles") val profiles: List<VKUser>? = null,
     @SerializedName("groups") val groups: List<com.selfcode.vkplus.data.api.VKGroup>? = null
+)
+
+// Reactions
+data class VKReaction(
+    @SerializedName("id") val id: Int = 0,
+    @SerializedName("count") val count: Int = 0
+)
+
+// Reply message
+data class VKReplyMessage(
+    @SerializedName("id") val id: Int = 0,
+    @SerializedName("from_id") val fromId: Int = 0,
+    @SerializedName("text") val text: String = "",
+    @SerializedName("date") val date: Long = 0
+)
+
+// Albums
+data class VKAlbum(
+    @SerializedName("id") val id: Int = 0,
+    @SerializedName("owner_id") val ownerId: Int = 0,
+    @SerializedName("title") val title: String = "",
+    @SerializedName("size") val size: Int = 0,
+    @SerializedName("thumb") val thumb: VKPhoto? = null,
+    @SerializedName("description") val description: String = ""
+)
+
+
+data class VKAlbumsResponse(
+    @SerializedName("count") val count: Int = 0,
+    @SerializedName("items") val items: List<VKAlbum> = emptyList()
+)
+
+data class VKPhotosResponse(
+    @SerializedName("count") val count: Int = 0,
+    @SerializedName("items") val items: List<VKPhoto> = emptyList()
+)
+
+// Community / Group full
+data class VKCommunity(
+    @SerializedName("id") val id: Int = 0,
+    @SerializedName("name") val name: String = "",
+    @SerializedName("screen_name") val screenName: String = "",
+    @SerializedName("photo_200") val photo200: String? = null,
+    @SerializedName("photo_100") val photo100: String? = null,
+    @SerializedName("type") val type: String = "",
+    @SerializedName("is_member") val isMember: Int = 0,
+    @SerializedName("members_count") val membersCount: Int = 0,
+    @SerializedName("description") val description: String = "",
+    @SerializedName("activity") val activity: String = ""
+)
+
+data class VKCommunitiesResponse(
+    @SerializedName("count") val count: Int = 0,
+    @SerializedName("items") val items: List<VKCommunity> = emptyList()
+)
+
+// Birthday
+data class VKBirthday(
+    val userId: Int,
+    val name: String,
+    val photo: String?,
+    val bdate: String
+)
+
+// Gift
+data class VKGiftItem(
+    @SerializedName("id") val id: Int = 0,
+    @SerializedName("from_id") val fromId: Int = 0,
+    @SerializedName("message") val message: String = "",
+    @SerializedName("date") val date: Long = 0,
+    @SerializedName("gift") val gift: VKGiftInfo? = null
+)
+
+data class VKGiftInfo(
+    @SerializedName("id") val id: Int = 0,
+    @SerializedName("thumb_256") val thumb256: String = ""
+)
+
+data class VKGiftsResponse(
+    @SerializedName("count") val count: Int = 0,
+    @SerializedName("items") val items: List<VKGiftItem> = emptyList()
+)
+
+// People search
+data class VKUsersSearchResponse(
+    @SerializedName("count") val count: Int = 0,
+    @SerializedName("items") val items: List<VKUser> = emptyList()
 )

@@ -19,6 +19,7 @@ interface VKApi {
         @Query("filters") filters: String = "post",
         @Query("count") count: Int = 30,
         @Query("start_from") startFrom: String? = null,
+        @Query("fields") fields: String = "photo_100,online,status",
         @Query("access_token") token: String,
         @Query("v") version: String = "5.199"
     ): VKResponse<VKNewsfeedResponse>
@@ -63,6 +64,8 @@ interface VKApi {
         @Query("peer_id") peerId: Int,
         @Query("message") message: String,
         @Query("random_id") randomId: Long = System.currentTimeMillis(),
+        @Query("reply_to") replyTo: Int? = null,
+        @Query("forward_messages") forwardMessages: String? = null,
         @Query("access_token") token: String,
         @Query("v") version: String = "5.199"
     ): VKResponse<Int>
@@ -273,6 +276,150 @@ interface VKApi {
         @Query("access_token") token: String,
         @Query("v") version: String = "5.199"
     ): VKResponse<com.selfcode.vkplus.data.model.VKConversationsResponse>
+
+    // Photo albums
+    @GET("photos.getAlbums")
+    suspend fun getPhotoAlbums(
+        @Query("owner_id") ownerId: Int? = null,
+        @Query("need_system") needSystem: Int = 1,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<com.selfcode.vkplus.data.model.VKAlbumsResponse>
+
+    @GET("photos.get")
+    suspend fun getPhotos(
+        @Query("owner_id") ownerId: Int,
+        @Query("album_id") albumId: String = "wall",
+        @Query("count") count: Int = 50,
+        @Query("extended") extended: Int = 1,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<com.selfcode.vkplus.data.model.VKPhotosResponse>
+
+    @GET("photos.save")
+    suspend fun savePhoto(
+        @Query("album_id") albumId: Int,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<com.google.gson.JsonElement>
+
+    // Communities
+    @GET("groups.get")
+    suspend fun getUserGroups(
+        @Query("user_id") userId: Int? = null,
+        @Query("extended") extended: Int = 1,
+        @Query("fields") fields: String = "photo_100,members_count,activity",
+        @Query("count") count: Int = 50,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<com.selfcode.vkplus.data.model.VKCommunitiesResponse>
+
+    @GET("groups.join")
+    suspend fun joinGroup(
+        @Query("group_id") groupId: Int,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<Int>
+
+    @GET("groups.leave")
+    suspend fun leaveGroup(
+        @Query("group_id") groupId: Int,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<Int>
+
+    @GET("groups.search")
+    suspend fun searchGroups(
+        @Query("q") query: String,
+        @Query("count") count: Int = 20,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<com.selfcode.vkplus.data.model.VKCommunitiesResponse>
+
+    // People search
+    @GET("users.search")
+    suspend fun searchUsers(
+        @Query("q") query: String,
+        @Query("count") count: Int = 20,
+        @Query("fields") fields: String = "photo_100,online,status,city",
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<com.selfcode.vkplus.data.model.VKUsersSearchResponse>
+
+    // Blacklist
+    @GET("account.getBanned")
+    suspend fun getBannedUsers(
+        @Query("count") count: Int = 50,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<VKBannedResponse>
+
+    @GET("account.ban")
+    suspend fun banUser(
+        @Query("owner_id") userId: Int,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<Int>
+
+    @GET("account.unban")
+    suspend fun unbanUser(
+        @Query("owner_id") userId: Int,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<Int>
+
+    // Followers
+    @GET("users.getFollowers")
+    suspend fun getOwnFollowers(
+        @Query("count") count: Int = 50,
+        @Query("fields") fields: String = "photo_100,online",
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<com.selfcode.vkplus.data.api.VKUsersResponse>
+
+    // Friend request: add
+    @GET("friends.add")
+    suspend fun addFriend(
+        @Query("user_id") userId: Int,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<Int>
+
+    // Mutual friends
+    @GET("friends.getMutual")
+    suspend fun getMutualFriends(
+        @Query("target_uid") targetId: Int,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<List<Int>>
+
+    // Birthdays
+    @GET("friends.get")
+    suspend fun getFriendsWithBdays(
+        @Query("fields") fields: String = "bdate,photo_100",
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<VKFriendsResponse>
+
+    // Edit profile
+    @GET("account.saveProfileInfo")
+    suspend fun saveProfileInfo(
+        @Query("first_name") firstName: String? = null,
+        @Query("last_name") lastName: String? = null,
+        @Query("status") status: String? = null,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<VKSaveProfileResponse>
+
+    // Message reactions
+    @GET("messages.sendReaction")
+    suspend fun sendReaction(
+        @Query("peer_id") peerId: Int,
+        @Query("cmid") cmid: Int,
+        @Query("reaction_id") reactionId: Int,
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<Int>
 
     @GET("messages.getLongPollServer")
     suspend fun getLongPollServer(
@@ -509,4 +656,13 @@ data class VKComment(
 data class VKMessagesResponse(
     @com.google.gson.annotations.SerializedName("count") val count: Int = 0,
     @com.google.gson.annotations.SerializedName("items") val items: List<com.selfcode.vkplus.data.model.VKMessage> = emptyList()
+)
+
+data class VKBannedResponse(
+    @com.google.gson.annotations.SerializedName("count") val count: Int = 0,
+    @com.google.gson.annotations.SerializedName("items") val items: List<com.selfcode.vkplus.data.model.VKUser> = emptyList()
+)
+
+data class VKSaveProfileResponse(
+    @com.google.gson.annotations.SerializedName("changed") val changed: Int = 0
 )

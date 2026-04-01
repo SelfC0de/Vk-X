@@ -93,10 +93,10 @@ class MessagesViewModel @Inject constructor(
         }
     }
 
-    fun sendMessage(peerId: Int, text: String) {
+    fun sendMessage(peerId: Int, text: String, replyToId: Int? = null, forwardIds: List<Int>? = null) {
         viewModelScope.launch {
             _isSending.value = true
-            when (repository.sendMessage(peerId, text)) {
+            when (repository.sendMessage(peerId, text, replyTo = replyToId, forwardMessages = forwardIds?.joinToString(","))) {
                 is VKResult.Success -> loadMessages(peerId)
                 is VKResult.Error -> {}
             }
@@ -208,5 +208,9 @@ class MessagesViewModel @Inject constructor(
                 is VKResult.Error -> _uiState.value = _uiState.value.copy(isSearching = false)
             }
         }
+    }
+
+    fun sendReaction(peerId: Int, messageId: Int, reactionId: Int) {
+        viewModelScope.launch { repository.sendReaction(peerId, messageId, reactionId) }
     }
 }

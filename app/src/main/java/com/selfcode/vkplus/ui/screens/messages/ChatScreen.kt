@@ -22,7 +22,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -45,6 +44,9 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
+// Reaction emojis: id 1-6 (VK standard)
+private val REACTIONS = listOf("👍" to 1, "❤️" to 2, "🔥" to 3, "😂" to 4, "😢" to 5, "👎" to 6)
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ChatScreen(
@@ -61,13 +63,16 @@ fun ChatScreen(
     val translateLoading by viewModel.translateLoading.collectAsState()
     val lastActivity by viewModel.lastActivity.collectAsState()
     val listState = rememberLazyListState()
-    val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
+    val context = LocalContext.current
 
     var inputText by remember { mutableStateOf("") }
     var editingMessage by remember { mutableStateOf<VKMessage?>(null) }
+    var replyToMessage by remember { mutableStateOf<VKMessage?>(null) }
+    var forwardMessage by remember { mutableStateOf<VKMessage?>(null) }
     var selectedMessage by remember { mutableStateOf<VKMessage?>(null) }
     var showActionSheet by remember { mutableStateOf(false) }
+    var showReactions by remember { mutableStateOf(false) }
     var isRecording by remember { mutableStateOf(false) }
     var recorder by remember { mutableStateOf<MediaRecorder?>(null) }
     var recordingFile by remember { mutableStateOf<File?>(null) }
@@ -78,7 +83,7 @@ fun ChatScreen(
     }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) {
-            val file = File(context.cacheDir, "vkplus_voice_${System.currentTimeMillis()}.mp4")
+            val file = File(context.cacheDir, "vkp_voice_${System.currentTimeMillis()}.mp4")
             recordingFile = file
             recorder = createRecorder(context, file)
             recorder?.start()
@@ -94,50 +99,72 @@ fun ChatScreen(
         if (messages.isNotEmpty()) listState.animateScrollToItem(messages.size - 1)
     }
 
-    // Action bottom sheet
+    // Reaction picker overlay
+    if (showReactions && selectedMessage != null) {
+        val msg = selectedMessage!!
+        AlertDialog(
+            onDismissRequest = { showReactions = false },
+            containerColor = Surface,
+            title = { Text("Реакция", color = OnSurface, fontSize = 14.sp) },
+            text = {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    REACTIONS.forEach { (emoji, id) ->
+                        Box(modifier = Modifier.size(44.dp).clip(CircleShape)
+                            .background(SurfaceVariant).clickable {
+                                viewModel.sendReaction(peerId, msg.id, id)
+                                showReactions = false; selectedMessage = null
+                            }, contentAlignment = Alignment.Center) {
+                            Text(emoji, fontSize = 22.sp)
+                        }
+                    }
+                }
+            },
+            confirmButton = {}
+        )
+    }
+
+    // Action sheet
     if (showActionSheet && selectedMessage != null) {
         val msg = selectedMessage!!
         val isTranslated = translatedMessages.containsKey(msg.id)
-        val isTranslLoading = translateLoading.contains(msg.id)
-        ModalBottomSheet(
-            onDismissRequest = { showActionSheet = false; selectedMessage = null },
-            containerColor = Surface, contentColor = OnSurface
-        ) {
-            Column(modifier = Modifier.padding(bottom = 32.dp)) {
-                // Copy
-                ListItem(headlineContent = { Text("Копировать", color = OnSurface) },
-                    leadingContent = { Icon(Icons.Filled.Share, null, tint = CyberBlue) },
-                    modifier = Modifier.clickable { clipboard.setText(AnnotatedString(msg.text)); showActionSheet = false; selectedMessage = null },
-                    colors = ListItemDefaults.colors(containerColor = Surface))
+        ModalBottomSheet(onDismissRequest = { showActionSheet = false; selectedMessage = null },
+            containerColor = Surface, contentColor = OnSurface) {
+            Column(Modifier.padding(bottom = 32.dp)) {
+                sheetItem("Ответить", Icons.Filled.Reply, CyberBlue) {
+                    replyToMessage = msg; showActionSheet = false; selectedMessage = null
+                }
                 HorizontalDivider(color = Divider)
-                // Translate
-                ListItem(headlineContent = { Text(if (isTranslated) "Скрыть перевод" else "Перевести на RU", color = OnSurface) },
-                    leadingContent = {
-                        if (isTranslLoading) CircularProgressIndicator(modifier = Modifier.size(18.dp), color = CyberBlue, strokeWidth = 2.dp)
-                        else Icon(Icons.Filled.Refresh, null, tint = CyberBlue)
-                    },
-                    modifier = Modifier.clickable {
-                        if (isTranslated) viewModel.clearTranslation(msg.id)
-                        else viewModel.translateMessage(msg.id, msg.text)
-                        showActionSheet = false; selectedMessage = null
-                    },
-                    colors = ListItemDefaults.colors(containerColor = Surface))
+                sheetItem("Переслать", Icons.Filled.Forward, CyberBlue) {
+                    forwardMessage = msg; inputText = "[Пересланное: ${msg.text.take(30)}]"
+                    showActionSheet = false; selectedMessage = null
+                }
+                HorizontalDivider(color = Divider)
+                sheetItem("Реакция", Icons.Filled.EmojiEmotions, Color(0xFFFFB800)) {
+                    showActionSheet = false; showReactions = true
+                }
+                HorizontalDivider(color = Divider)
+                sheetItem("Копировать", Icons.Filled.ContentCopy, OnSurfaceMuted) {
+                    clipboard.setText(AnnotatedString(msg.text)); showActionSheet = false; selectedMessage = null
+                }
+                HorizontalDivider(color = Divider)
+                sheetItem(if (isTranslated) "Скрыть перевод" else "Перевести", Icons.Filled.Translate, CyberBlue) {
+                    if (isTranslated) viewModel.clearTranslation(msg.id)
+                    else viewModel.translateMessage(msg.id, msg.text)
+                    showActionSheet = false; selectedMessage = null
+                }
                 if (msg.isOutgoing) {
                     HorizontalDivider(color = Divider)
-                    ListItem(headlineContent = { Text("Редактировать", color = OnSurface) },
-                        leadingContent = { Icon(Icons.Default.Edit, null, tint = CyberBlue) },
-                        modifier = Modifier.clickable { editingMessage = msg; inputText = msg.text; showActionSheet = false; selectedMessage = null },
-                        colors = ListItemDefaults.colors(containerColor = Surface))
+                    sheetItem("Редактировать", Icons.Default.Edit, CyberBlue) {
+                        editingMessage = msg; inputText = msg.text; showActionSheet = false; selectedMessage = null
+                    }
                     HorizontalDivider(color = Divider)
-                    ListItem(headlineContent = { Text("Удалить", color = ErrorRed) },
-                        leadingContent = { Icon(Icons.Filled.Delete, null, tint = ErrorRed) },
-                        modifier = Modifier.clickable { viewModel.deleteMessage(peerId, msg.id); showActionSheet = false; selectedMessage = null },
-                        colors = ListItemDefaults.colors(containerColor = Surface))
+                    sheetItem("Восстановить", Icons.Filled.Restore, OnSurfaceMuted) {
+                        viewModel.restoreMessage(peerId, msg.id); showActionSheet = false; selectedMessage = null
+                    }
                     HorizontalDivider(color = Divider)
-                    ListItem(headlineContent = { Text("Восстановить", color = OnSurface) },
-                        leadingContent = { Icon(Icons.Filled.Refresh, null, tint = OnSurfaceMuted) },
-                        modifier = Modifier.clickable { viewModel.restoreMessage(peerId, msg.id); showActionSheet = false; selectedMessage = null },
-                        colors = ListItemDefaults.colors(containerColor = Surface))
+                    sheetItem("Удалить", Icons.Filled.Delete, ErrorRed) {
+                        viewModel.deleteMessage(peerId, msg.id); showActionSheet = false; selectedMessage = null
+                    }
                 }
             }
         }
@@ -155,9 +182,8 @@ fun ChatScreen(
                     Column {
                         Text(peerName, color = OnSurface, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                         val activity = lastActivity[peerId]
-                        if (activity != null) {
-                            Text(activity, color = if (activity == "онлайн") CyberAccent else OnSurfaceMuted, fontSize = 11.sp)
-                        }
+                        if (activity != null) Text(activity,
+                            color = if (activity == "онлайн сейчас") CyberAccent else OnSurfaceMuted, fontSize = 11.sp)
                     }
                 }
             },
@@ -167,21 +193,23 @@ fun ChatScreen(
 
         // Edit banner
         AnimatedVisibility(visible = editingMessage != null, enter = slideInVertically() + fadeIn(), exit = slideOutVertically() + fadeOut()) {
-            Row(modifier = Modifier.fillMaxWidth().background(CyberBlue.copy(alpha = 0.1f)).padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Edit, null, tint = CyberBlue, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(8.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Редактирование", color = CyberBlue, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                    Text(editingMessage?.text?.take(40) ?: "", color = OnSurfaceMuted, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-                IconButton(onClick = { editingMessage = null; inputText = "" }, modifier = Modifier.size(24.dp)) {
-                    Icon(Icons.Default.Clear, null, tint = OnSurfaceMuted, modifier = Modifier.size(16.dp))
-                }
-            }
+            Banner(icon = Icons.Default.Edit, color = CyberAccent, title = "Редактирование",
+                subtitle = editingMessage?.text?.take(50) ?: "") { editingMessage = null; inputText = "" }
         }
 
-        // Messages
+        // Reply banner
+        AnimatedVisibility(visible = replyToMessage != null && editingMessage == null, enter = slideInVertically() + fadeIn(), exit = slideOutVertically() + fadeOut()) {
+            Banner(icon = Icons.Filled.Reply, color = CyberBlue, title = "Ответ",
+                subtitle = replyToMessage?.text?.take(60) ?: "") { replyToMessage = null }
+        }
+
+        // Forward banner
+        AnimatedVisibility(visible = forwardMessage != null && replyToMessage == null && editingMessage == null, enter = slideInVertically() + fadeIn(), exit = slideOutVertically() + fadeOut()) {
+            Banner(icon = Icons.Filled.Forward, color = CyberBlue, title = "Пересланное сообщение",
+                subtitle = forwardMessage?.text?.take(60) ?: "") { forwardMessage = null; inputText = "" }
+        }
+
+        // Messages list
         Box(modifier = Modifier.weight(1f)) {
             if (state.isChatLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = CyberBlue)
@@ -194,7 +222,8 @@ fun ChatScreen(
                             message = msg,
                             translation = translatedMessages[msg.id],
                             isTranslating = translateLoading.contains(msg.id),
-                            onLongPress = { selectedMessage = msg; showActionSheet = true }
+                            onLongPress = { selectedMessage = msg; showActionSheet = true },
+                            onReplyClick = { replyToMessage = it }
                         )
                     }
                 }
@@ -204,28 +233,22 @@ fun ChatScreen(
         // Input bar
         Row(modifier = Modifier.fillMaxWidth().background(Surface).padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.Bottom) {
-            // Attach
             IconButton(onClick = { filePicker.launch("*/*") }) {
-                Icon(Icons.Filled.Share, null, tint = OnSurfaceMuted, modifier = Modifier.size(22.dp))
+                Icon(Icons.Filled.AttachFile, null, tint = OnSurfaceMuted, modifier = Modifier.size(22.dp))
             }
-            // Text field
             OutlinedTextField(
                 value = inputText,
                 onValueChange = { inputText = it },
-                placeholder = { Text(if (editingMessage != null) "Редактировать..." else "Сообщение...", color = OnSurfaceMuted) },
+                placeholder = { Text(when { editingMessage != null -> "Редактировать..."; replyToMessage != null -> "Ответить..."; else -> "Сообщение..." }, color = OnSurfaceMuted) },
                 modifier = Modifier.weight(1f),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = if (editingMessage != null) CyberAccent else CyberBlue,
-                    unfocusedBorderColor = Divider,
-                    focusedTextColor = OnSurface, unfocusedTextColor = OnSurface, cursorColor = CyberBlue
-                ),
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = CyberBlue, unfocusedBorderColor = Divider,
+                    focusedTextColor = OnSurface, unfocusedTextColor = OnSurface, cursorColor = CyberBlue),
                 shape = RoundedCornerShape(20.dp), maxLines = 4
             )
             Spacer(Modifier.width(4.dp))
 
-            if (inputText.isBlank() && editingMessage == null) {
-                // Voice
-                val recScale by animateFloatAsState(if (isRecording) 1.2f else 1f, spring(stiffness = Spring.StiffnessLow), label = "rec")
+            if (inputText.isBlank() && editingMessage == null && replyToMessage == null && forwardMessage == null) {
+                val recScale by animateFloatAsState(if (isRecording) 1.2f else 1f, spring(stiffness = Spring.StiffnessLow), label = "rs")
                 IconButton(onClick = {
                     if (isRecording) {
                         recorder?.apply { stop(); release() }; recorder = null; isRecording = false
@@ -235,36 +258,34 @@ fun ChatScreen(
                     Icon(Icons.Filled.Mic, null, tint = if (isRecording) Color.White else CyberBlue, modifier = Modifier.size(20.dp))
                 }
             } else {
-                // Translate input button (globe icon = send translated)
                 if (inputText.isNotBlank() && editingMessage == null) {
                     IconButton(onClick = {
                         isTranslatingInput = true
-                        viewModel.translateInput(inputText, "en") { translated ->
-                            inputText = translated
-                            isTranslatingInput = false
-                        }
+                        viewModel.translateInput(inputText, "en") { translated -> inputText = translated; isTranslatingInput = false }
                     }, modifier = Modifier.size(44.dp).background(SurfaceVariant, CircleShape)) {
-                        if (isTranslatingInput) CircularProgressIndicator(modifier = Modifier.size(20.dp), color = CyberBlue, strokeWidth = 2.dp)
-                        else Icon(Icons.Filled.Refresh, null, tint = OnSurfaceMuted, modifier = Modifier.size(20.dp))
+                        if (isTranslatingInput) CircularProgressIndicator(modifier = Modifier.size(18.dp), color = CyberBlue, strokeWidth = 2.dp)
+                        else Icon(Icons.Filled.Translate, null, tint = OnSurfaceMuted, modifier = Modifier.size(20.dp))
                     }
                     Spacer(Modifier.width(4.dp))
                 }
-                // Send/Save
                 IconButton(
                     onClick = {
                         val text = inputText.trim()
                         if (text.isBlank()) return@IconButton
                         val editing = editingMessage
-                        if (editing != null) { viewModel.editMessage(peerId, editing.id, text); editingMessage = null }
-                        else viewModel.sendMessage(peerId, text)
+                        when {
+                            editing != null -> { viewModel.editMessage(peerId, editing.id, text); editingMessage = null }
+                            replyToMessage != null -> { viewModel.sendMessage(peerId, text, replyToId = replyToMessage!!.id); replyToMessage = null }
+                            forwardMessage != null -> { viewModel.sendMessage(peerId, text, forwardIds = listOf(forwardMessage!!.id)); forwardMessage = null }
+                            else -> viewModel.sendMessage(peerId, text)
+                        }
                         inputText = ""
                     },
                     enabled = !isSending && inputText.isNotBlank(),
                     modifier = Modifier.size(44.dp).background(if (inputText.isNotBlank()) CyberBlue else SurfaceVariant, CircleShape)
                 ) {
                     Icon(if (editingMessage != null) Icons.Default.Check else Icons.Default.Send, null,
-                        tint = if (inputText.isNotBlank()) Color(0xFF050810) else OnSurfaceMuted,
-                        modifier = Modifier.size(20.dp))
+                        tint = if (inputText.isNotBlank()) Color(0xFF050810) else OnSurfaceMuted, modifier = Modifier.size(20.dp))
                 }
             }
         }
@@ -273,7 +294,8 @@ fun ChatScreen(
         AnimatedVisibility(visible = isRecording, enter = fadeIn(), exit = fadeOut()) {
             Row(modifier = Modifier.fillMaxWidth().background(ErrorRed.copy(alpha = 0.1f)).padding(horizontal = 16.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically) {
-                val pulse by rememberInfiniteTransition(label = "rp").animateFloat(0.5f, 1f, infiniteRepeatable(tween(600), RepeatMode.Reverse), label = "p")
+                val pulse by rememberInfiniteTransition(label = "rp").animateFloat(0.5f, 1f,
+                    infiniteRepeatable(tween(600), RepeatMode.Reverse), label = "p")
                 Box(modifier = Modifier.size(8.dp).scale(pulse).background(ErrorRed, CircleShape))
                 Spacer(Modifier.width(8.dp))
                 Text("Запись голосового...", color = ErrorRed, fontSize = 13.sp)
@@ -286,27 +308,78 @@ fun ChatScreen(
     }
 }
 
+@Composable
+private fun Banner(icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color, title: String, subtitle: String, onClose: () -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth().background(color.copy(alpha = 0.1f)).padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, null, tint = color, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(8.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, color = color, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+            Text(subtitle, color = OnSurfaceMuted, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        IconButton(onClick = onClose, modifier = Modifier.size(24.dp)) {
+            Icon(Icons.Default.Clear, null, tint = OnSurfaceMuted, modifier = Modifier.size(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun sheetItem(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, tint: Color, onClick: () -> Unit) {
+    ListItem(headlineContent = { Text(label, color = if (tint == ErrorRed) ErrorRed else OnSurface) },
+        leadingContent = { Icon(icon, null, tint = tint) },
+        modifier = Modifier.clickable(onClick = onClick),
+        colors = ListItemDefaults.colors(containerColor = Surface))
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MessageBubble(
-    message: VKMessage,
-    translation: String?,
-    isTranslating: Boolean,
-    onLongPress: () -> Unit
-) {
+fun MessageBubble(message: VKMessage, translation: String?, isTranslating: Boolean,
+    onLongPress: () -> Unit, onReplyClick: (VKMessage) -> Unit) {
     val isOut = message.isOutgoing
     val time = remember(message.date) { SimpleDateFormat("HH:mm", Locale("ru")).format(Date(message.date * 1000)) }
 
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = if (isOut) Arrangement.End else Arrangement.Start) {
         Column(horizontalAlignment = if (isOut) Alignment.End else Alignment.Start) {
-            Box(
-                modifier = Modifier.widthIn(max = 280.dp)
-                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp,
-                        bottomStart = if (isOut) 16.dp else 4.dp, bottomEnd = if (isOut) 4.dp else 16.dp))
-                    .background(if (isOut) CyberBlue.copy(alpha = 0.85f) else SurfaceVariant)
-                    .combinedClickable(onClick = {}, onLongClick = onLongPress)
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
-            ) {
+            // Reply quote
+            message.replyMessage?.let { reply ->
+                Box(modifier = Modifier.widthIn(max = 260.dp)
+                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                    .background(CyberBlue.copy(alpha = 0.08f))
+                    .clickable { onReplyClick(message) }
+                    .padding(horizontal = 10.dp, vertical = 5.dp)) {
+                    Column {
+                        Text("↩ Ответ", color = CyberBlue, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                        Text(reply.text.take(80), color = OnSurfaceMuted, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+                Spacer(Modifier.height(1.dp))
+            }
+
+            // Forwarded
+            if (!message.fwdMessages.isNullOrEmpty()) {
+                Box(modifier = Modifier.widthIn(max = 260.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(SurfaceVariant)
+                    .padding(horizontal = 10.dp, vertical = 6.dp)) {
+                    Column {
+                        Text("▶ Пересланное", color = OnSurfaceMuted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                        message.fwdMessages.take(2).forEach { fwd ->
+                            Text(fwd.text.take(80), color = OnSurface, fontSize = 12.sp)
+                        }
+                    }
+                }
+                Spacer(Modifier.height(1.dp))
+            }
+
+            // Main bubble
+            Box(modifier = Modifier.widthIn(max = 280.dp)
+                .clip(RoundedCornerShape(topStart = if (!isOut && message.replyMessage == null) 4.dp else 16.dp,
+                    topEnd = if (isOut && message.replyMessage == null) 4.dp else 16.dp,
+                    bottomStart = if (isOut) 16.dp else 4.dp, bottomEnd = if (isOut) 4.dp else 16.dp))
+                .background(if (isOut) CyberBlue.copy(alpha = 0.85f) else SurfaceVariant)
+                .combinedClickable(onClick = {}, onLongClick = onLongPress)
+                .padding(horizontal = 12.dp, vertical = 8.dp)) {
                 Column {
                     message.voiceMessage?.let { voice ->
                         VoiceMessagePlayer(audio = voice, isOutgoing = isOut)
@@ -315,20 +388,27 @@ fun MessageBubble(
                     if (message.text.isNotBlank()) {
                         Text(message.text, color = if (isOut) Color(0xFF050810) else OnSurface, fontSize = 14.sp, lineHeight = 20.sp)
                     }
-                    if (isTranslating) {
-                        Spacer(Modifier.height(4.dp))
-                        CircularProgressIndicator(modifier = Modifier.size(12.dp), color = if (isOut) Color(0xFF050810) else CyberBlue, strokeWidth = 1.5.dp)
-                    }
+                    if (isTranslating) { Spacer(Modifier.height(4.dp)); CircularProgressIndicator(modifier = Modifier.size(12.dp), color = if (isOut) Color(0xFF050810) else CyberBlue, strokeWidth = 1.5.dp) }
                     Text(time, color = if (isOut) Color(0xFF050810).copy(alpha = 0.6f) else OnSurfaceMuted, fontSize = 11.sp, modifier = Modifier.align(Alignment.End))
                 }
             }
-            // Translation bubble
+
+            // Reaction display
+            if (message.reactionId != 0) {
+                val emoji = REACTIONS.find { it.second == message.reactionId }?.first ?: ""
+                if (emoji.isNotEmpty()) {
+                    Box(modifier = Modifier.offset(x = if (isOut) (-4).dp else 4.dp, y = (-4).dp)
+                        .background(SurfaceVariant, RoundedCornerShape(10.dp)).padding(horizontal = 6.dp, vertical = 2.dp)) {
+                        Text(emoji, fontSize = 14.sp)
+                    }
+                }
+            }
+
+            // Translation
             if (translation != null) {
                 Spacer(Modifier.height(2.dp))
-                Box(modifier = Modifier.widthIn(max = 280.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(CyberBlue.copy(alpha = 0.12f))
-                    .padding(horizontal = 10.dp, vertical = 6.dp)) {
+                Box(modifier = Modifier.widthIn(max = 280.dp).clip(RoundedCornerShape(8.dp))
+                    .background(CyberBlue.copy(alpha = 0.12f)).padding(horizontal = 10.dp, vertical = 6.dp)) {
                     Column {
                         Text("🌐 Перевод", color = CyberBlue, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                         Text(translation, color = OnSurface, fontSize = 13.sp, lineHeight = 18.sp)

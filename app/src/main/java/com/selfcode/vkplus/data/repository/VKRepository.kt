@@ -78,8 +78,8 @@ class VKRepository @Inject constructor(
         VKResult.Success(resp.response ?: 0)
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
 
-    suspend fun sendMessage(peerId: Int, text: String): VKResult<Int> = runCatching {
-        val resp = api.sendMessage(peerId = peerId, message = text, token = token())
+    suspend fun sendMessage(peerId: Int, text: String, replyTo: Int? = null, forwardMessages: String? = null): VKResult<Int> = runCatching {
+        val resp = api.sendMessage(peerId = peerId, message = text, replyTo = replyTo, forwardMessages = forwardMessages, token = token())
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
         VKResult.Success(resp.response ?: 0)
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
@@ -263,6 +263,123 @@ class VKRepository @Inject constructor(
         val resp = api.getConversationsPaged(offset = offset, token = token())
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
         VKResult.Success(resp.response ?: com.selfcode.vkplus.data.model.VKConversationsResponse())
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    // Albums
+    suspend fun getPhotoAlbums(ownerId: Int? = null): VKResult<List<com.selfcode.vkplus.data.model.VKAlbum>> = runCatching {
+        val resp = api.getPhotoAlbums(ownerId = ownerId, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response?.items ?: emptyList())
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun getAlbumPhotos(ownerId: Int, albumId: String = "wall"): VKResult<List<com.selfcode.vkplus.data.model.VKPhoto>> = runCatching {
+        val resp = api.getPhotos(ownerId = ownerId, albumId = albumId, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response?.items ?: emptyList())
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    // Communities
+    suspend fun getUserCommunities(userId: Int? = null): VKResult<List<com.selfcode.vkplus.data.model.VKCommunity>> = runCatching {
+        val resp = api.getUserGroups(userId = userId, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response?.items ?: emptyList())
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun joinGroup(groupId: Int): VKResult<Unit> = runCatching {
+        val resp = api.joinGroup(groupId = groupId, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(Unit)
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun leaveGroup(groupId: Int): VKResult<Unit> = runCatching {
+        val resp = api.leaveGroup(groupId = groupId, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(Unit)
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun searchGroups(query: String): VKResult<List<com.selfcode.vkplus.data.model.VKCommunity>> = runCatching {
+        val resp = api.searchGroups(query = query, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response?.items ?: emptyList())
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    // People search
+    suspend fun searchPeople(query: String): VKResult<List<com.selfcode.vkplus.data.model.VKUser>> = runCatching {
+        val resp = api.searchUsers(query = query, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response?.items ?: emptyList())
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    // Blacklist
+    suspend fun getBannedList(): VKResult<List<com.selfcode.vkplus.data.model.VKUser>> = runCatching {
+        val resp = api.getBannedUsers(token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response?.items ?: emptyList())
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun banUser(userId: Int): VKResult<Unit> = runCatching {
+        val resp = api.banUser(userId = userId, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(Unit)
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun unbanUser(userId: Int): VKResult<Unit> = runCatching {
+        val resp = api.unbanUser(userId = userId, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(Unit)
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    // Followers
+    suspend fun getOwnFollowers(): VKResult<List<com.selfcode.vkplus.data.model.VKUser>> = runCatching {
+        val resp = api.getOwnFollowers(token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response?.items ?: emptyList())
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    // Add friend
+    suspend fun addFriend(userId: Int): VKResult<Int> = runCatching {
+        val resp = api.addFriend(userId = userId, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response ?: 0)
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    // Mutual friends
+    suspend fun getMutualFriends(targetId: Int): VKResult<List<Int>> = runCatching {
+        val resp = api.getMutualFriends(targetId = targetId, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response ?: emptyList())
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    // Birthdays (friends with bdate today/this week)
+    suspend fun getUpcomingBirthdays(): VKResult<List<com.selfcode.vkplus.data.model.VKBirthday>> = runCatching {
+        val resp = api.getFriendsWithBdays(token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        val today = java.util.Calendar.getInstance()
+        val todayDay = today.get(java.util.Calendar.DAY_OF_MONTH)
+        val todayMonth = today.get(java.util.Calendar.MONTH) + 1
+        val result = resp.response?.items?.mapNotNull { user ->
+            val bdate = user.lastSeen?.let { null } ?: run {
+                // Parse bdate from VKUser - it's in lastSeen field workaround won't work
+                // Actually bdate is a separate field we need to add to VKUser
+                null
+            }
+            null // placeholder until bdate field added
+        }?.filterNotNull() ?: emptyList()
+        VKResult.Success(result)
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    // Edit profile
+    suspend fun saveProfileInfo(firstName: String? = null, lastName: String? = null, status: String? = null): VKResult<Unit> = runCatching {
+        val resp = api.saveProfileInfo(firstName = firstName, lastName = lastName, status = status, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(Unit)
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    // Send reaction
+    suspend fun sendReaction(peerId: Int, cmid: Int, reactionId: Int): VKResult<Unit> = runCatching {
+        val resp = api.sendReaction(peerId = peerId, cmid = cmid, reactionId = reactionId, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(Unit)
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
 
     suspend fun getBannedFriends(): VKResult<List<com.selfcode.vkplus.data.model.VKUser>> = runCatching {

@@ -23,6 +23,10 @@ import com.selfcode.vkplus.ui.screens.messages.MessagesScreen
 import com.selfcode.vkplus.ui.screens.profile.ProfileScreen
 import com.selfcode.vkplus.ui.screens.settings.SettingsScreen
 import com.selfcode.vkplus.ui.screens.about.AboutScreen
+import com.selfcode.vkplus.ui.screens.communities.CommunitiesScreen
+import com.selfcode.vkplus.ui.screens.search.SearchPeopleScreen
+import com.selfcode.vkplus.ui.screens.photos.PhotosScreen
+import com.selfcode.vkplus.ui.screens.profile.BlacklistScreen
 import com.selfcode.vkplus.ui.screens.exploits.ExploitsScreen
 import com.selfcode.vkplus.ui.screens.tools.ToolsScreen
 import com.selfcode.vkplus.ui.theme.VKPlusTheme
@@ -170,11 +174,19 @@ fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScree
                 }
             }
             Screen.Friends -> FriendsScreen()
-            Screen.Profile -> ProfileScreen(onLogout = onLogout)
+            Screen.Profile -> ProfileScreen(
+                onLogout = onLogout,
+                onNavigateToPhotos = { currentScreen = Screen.Photos },
+                onNavigateToBlacklist = { currentScreen = Screen.Blacklist }
+            )
             Screen.Settings -> SettingsScreen(onAntiScreenChanged = onAntiScreenChanged)
             Screen.Tools -> ToolsScreen()
             Screen.About -> AboutScreen()
             Screen.Exploits -> ExploitsScreen()
+            Screen.Communities -> CommunitiesScreen()
+            Screen.SearchPeople -> SearchPeopleScreen(onProfile = { currentScreen = Screen.Profile })
+            Screen.Photos -> PhotosScreen()
+            Screen.Blacklist -> BlacklistScreen()
             else -> FeedScreen()
         }
     }

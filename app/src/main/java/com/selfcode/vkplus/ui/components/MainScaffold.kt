@@ -41,6 +41,10 @@ private val drawerItems = listOf(
     DrawerItem(Screen.Profile, "Профиль", Icons.Outlined.Person, Icons.Filled.Person),
     DrawerItem(Screen.Settings, "Настройки", Icons.Outlined.Settings, Icons.Filled.Settings),
     DrawerItem(Screen.Tools, "Инструменты", Icons.Outlined.Build, Icons.Filled.Build),
+    DrawerItem(Screen.Communities, "Сообщества", Icons.Outlined.People, Icons.Filled.People),
+    DrawerItem(Screen.SearchPeople, "Поиск людей", Icons.Outlined.Person, Icons.Filled.Search),
+    DrawerItem(Screen.Photos, "Фото", Icons.Outlined.Person, Icons.Filled.PhotoAlbum),
+    DrawerItem(Screen.Blacklist, "Чёрный список", Icons.Outlined.Person, Icons.Filled.Block),
     DrawerItem(Screen.Exploits, "Exploits", Icons.Outlined.Settings, Icons.Filled.Star),
     DrawerItem(Screen.About, "About Dev", Icons.Outlined.Person, Icons.Filled.Person),
 )

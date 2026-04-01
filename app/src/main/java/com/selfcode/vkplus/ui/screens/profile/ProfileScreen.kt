@@ -53,12 +53,45 @@ fun ProfileScreen(
     val clipboard = LocalClipboardManager.current
     var showArchive by remember { mutableStateOf(false) }
     var copyToast by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var editStatus by remember { mutableStateOf("") }
 
     LaunchedEffect(copyToast) {
         if (copyToast) {
             kotlinx.coroutines.delay(2000)
             copyToast = false
         }
+    }
+
+    // Edit profile dialog
+    if (showEditDialog && user != null) {
+        AlertDialog(
+            onDismissRequest = { showEditDialog = false },
+            containerColor = Surface,
+            title = { Text("Редактировать профиль", color = OnSurface) },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = editStatus,
+                        onValueChange = { editStatus = it },
+                        label = { Text("Статус", color = OnSurfaceMuted) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = CyberBlue, unfocusedBorderColor = Divider,
+                            focusedTextColor = OnSurface, unfocusedTextColor = OnSurface, cursorColor = CyberBlue
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.saveProfile(editStatus)
+                    showEditDialog = false
+                }) { Text("Сохранить", color = CyberBlue) }
+            },
+            dismissButton = { TextButton(onClick = { showEditDialog = false }) { Text("Отмена", color = OnSurfaceMuted) } }
+        )
     }
 
     if (showArchive && user != null) {
@@ -110,6 +143,7 @@ fun ProfileScreen(
                     Column(modifier = Modifier.padding(horizontal = 20.dp)) {
                         // Name + fake verification badge + mirror indicator
                         Row(verticalAlignment = Alignment.CenterVertically) {
+                            LaunchedEffect(user) { editStatus = user?.status ?: "" }
                             Text(displayName, color = if (isMirrorActive) Color(0xFFFF6B35) else OnSurface, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                             if (exploitsState.fakeVerification) {
                                 Spacer(Modifier.width(6.dp))
@@ -141,10 +175,47 @@ fun ProfileScreen(
                             }
                         }
 
+                        Spacer(Modifier.height(8.dp))
+                        // Quick links row
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(
+                                onClick = onNavigateToPhotos,
+                                modifier = Modifier.height(36.dp),
+                                shape = RoundedCornerShape(8.dp),
+                                border = ButtonDefaults.outlinedButtonBorder.copy(brush = androidx.compose.ui.graphics.SolidColor(Divider)),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = OnSurfaceMuted)
+                            ) {
+                                Icon(Icons.Filled.PhotoAlbum, null, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Фото", fontSize = 12.sp)
+                            }
+                            OutlinedButton(
+                                onClick = onNavigateToBlacklist,
+                                modifier = Modifier.height(36.dp),
+                                shape = RoundedCornerShape(8.dp),
+                                border = ButtonDefaults.outlinedButtonBorder.copy(brush = androidx.compose.ui.graphics.SolidColor(Divider)),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = OnSurfaceMuted)
+                            ) {
+                                Icon(Icons.Filled.Block, null, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Чёрный список", fontSize = 12.sp)
+                            }
+                        }
                         Spacer(Modifier.height(16.dp))
 
                         // Buttons row
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(
+                                onClick = { showEditDialog = true },
+                                modifier = Modifier.height(42.dp),
+                                shape = RoundedCornerShape(10.dp),
+                                border = ButtonDefaults.outlinedButtonBorder.copy(brush = androidx.compose.ui.graphics.SolidColor(OnSurfaceMuted)),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = OnSurfaceMuted)
+                            ) {
+                                Icon(Icons.Filled.Edit, null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Изменить", fontSize = 12.sp)
+                            }
                             OutlinedButton(
                                 onClick = { showArchive = true },
                                 modifier = Modifier.weight(1f).height(42.dp),

@@ -54,7 +54,7 @@ class FeedViewModel @Inject constructor(
         when (val result = repository.getNewsfeed()) {
             is VKResult.Success -> {
                 val profilesMap = result.data.profiles.associateBy { it.id }
-                val groupsMap = result.data.groups.associateBy { it.id }
+                val groupsMap = result.data.groups.associateBy { it.id } // stored as positive, accessed as -sourceId
                 _uiState.value = FeedUiState(
                     posts = result.data.items,
                     profiles = profilesMap,

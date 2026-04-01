@@ -22,6 +22,13 @@ class ProfileViewModel @Inject constructor(
 
     init { loadProfile() }
 
+    fun saveProfile(status: String) {
+        viewModelScope.launch {
+            repository.saveProfileInfo(status = status)
+            loadProfile()
+        }
+    }
+
     fun loadProfile() {
         viewModelScope.launch {
             _isLoading.value = true
