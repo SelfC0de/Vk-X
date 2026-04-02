@@ -56,6 +56,8 @@ interface VKApi {
     suspend fun getHistory(
         @Query("peer_id") peerId: Int,
         @Query("count") count: Int = 50,
+        @Query("offset") offset: Int = 0,
+        @Query("start_message_id") startMessageId: Int = -1,
         @Query("extended") extended: Int = 1,
         @Query("fields") fields: String = "photo_100",
         @Query("access_token") token: String,

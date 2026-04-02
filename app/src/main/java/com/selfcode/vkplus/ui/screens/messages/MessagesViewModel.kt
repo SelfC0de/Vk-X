@@ -20,6 +20,7 @@ data class MessagesUiState(
     val dialogs: List<VKDialog> = emptyList(),
     val profiles: Map<Int, VKUser> = emptyMap(),
     val chatMessages: Map<Int, List<VKMessage>> = emptyMap(),
+    val isLoadingOlder: Boolean = false,
     val isLoading: Boolean = false,
     val isChatLoading: Boolean = false,
     val isLoadingMore: Boolean = false,
@@ -90,6 +91,27 @@ class MessagesViewModel @Inject constructor(
                 is VKResult.Error -> {
                     _uiState.value = _uiState.value.copy(isChatLoading = false)
                 }
+            }
+        }
+    }
+
+    fun loadOlderMessages(peerId: Int) {
+        val current = _uiState.value.chatMessages[peerId] ?: return
+        if (_uiState.value.isLoadingOlder) return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoadingOlder = true)
+            when (val r = repository.getOlderMessages(peerId, offset = current.size)) {
+                is VKResult.Success -> {
+                    if (r.data.isNotEmpty()) {
+                        val map = _uiState.value.chatMessages.toMutableMap()
+                        // Older messages come reversed (newest first), prepend to list
+                        map[peerId] = r.data.reversed() + current
+                        _uiState.value = _uiState.value.copy(chatMessages = map, isLoadingOlder = false)
+                    } else {
+                        _uiState.value = _uiState.value.copy(isLoadingOlder = false)
+                    }
+                }
+                is VKResult.Error -> _uiState.value = _uiState.value.copy(isLoadingOlder = false)
             }
         }
     }

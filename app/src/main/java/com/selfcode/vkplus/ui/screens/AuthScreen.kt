@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.selfcode.vkplus.auth.VKConfig
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import com.selfcode.vkplus.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -254,7 +255,42 @@ private fun TokenTab(onManualToken: (String) -> Unit, showInvalidError: Boolean)
                 color = OnSurfaceMuted, fontSize = 12.sp, textAlign = TextAlign.Center
             )
 
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(16.dp))
+
+            // App ID selector
+            var selectedClientIdx by remember { mutableIntStateOf(0) }
+            var showClientMenu by remember { mutableStateOf(false) }
+            val clients = VKConfig.clientLabels
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(
+                    onClick = { showClientMenu = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = OnSurfaceMuted),
+                    border = androidx.compose.foundation.BorderStroke(0.5.dp, Divider)
+                ) {
+                    Text("🔧 App ID: ${clients[selectedClientIdx].first}", fontSize = 13.sp, modifier = Modifier.weight(1f))
+                    Icon(Icons.Filled.KeyboardArrowDown, null, modifier = Modifier.size(16.dp))
+                }
+                DropdownMenu(
+                    expanded = showClientMenu,
+                    onDismissRequest = { showClientMenu = false },
+                    modifier = Modifier.background(Surface)
+                ) {
+                    clients.forEachIndexed { i, (label, id) ->
+                        DropdownMenuItem(
+                            text = { Text(label, color = OnSurface, fontSize = 13.sp) },
+                            onClick = {
+                                selectedClientIdx = i
+                                VKConfig.CLIENT_ID = id
+                                showClientMenu = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
 
             // Token field with animated border
             val fieldBorderAlpha by rememberInfiniteTransition(label = "field").animateFloat(

@@ -66,6 +66,12 @@ class VKRepository @Inject constructor(
         VKResult.Success(resp.response?.items ?: emptyList())
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
 
+    suspend fun getOlderMessages(peerId: Int, offset: Int): VKResult<List<VKMessage>> = runCatching {
+        val resp = api.getHistory(peerId = peerId, offset = offset, count = 50, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response?.items ?: emptyList())
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
     suspend fun deleteMessage(peerId: Int, messageId: Int): VKResult<Unit> = runCatching {
         val resp = api.deleteMessage(messageIds = messageId.toString(), peerId = peerId, token = token())
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)

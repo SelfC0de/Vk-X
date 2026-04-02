@@ -95,9 +95,58 @@ data class VKAttachment(
     @SerializedName("type") val type: String,
     @SerializedName("photo") val photo: VKPhoto? = null,
     @SerializedName("video") val video: VKVideo? = null,
+    @SerializedName("audio") val audio: VKAudio? = null,
+    @SerializedName("doc") val doc: VKDoc? = null,
+    @SerializedName("sticker") val sticker: VKSticker? = null,
     @SerializedName("link") val link: VKLink? = null,
     @SerializedName("audio_message") val audioMessage: VKAudioMessage? = null
 )
+
+data class VKAudio(
+    @SerializedName("id") val id: Int = 0,
+    @SerializedName("owner_id") val ownerId: Int = 0,
+    @SerializedName("artist") val artist: String = "",
+    @SerializedName("title") val title: String = "",
+    @SerializedName("duration") val duration: Int = 0,
+    @SerializedName("url") val url: String = ""
+)
+
+data class VKDoc(
+    @SerializedName("id") val id: Int = 0,
+    @SerializedName("owner_id") val ownerId: Int = 0,
+    @SerializedName("title") val title: String = "",
+    @SerializedName("size") val size: Int = 0,
+    @SerializedName("ext") val ext: String = "",
+    @SerializedName("url") val url: String = "",
+    @SerializedName("type") val type: Int = 0,
+    @SerializedName("preview") val preview: VKDocPreview? = null
+)
+
+data class VKDocPreview(
+    @SerializedName("photo") val photo: VKDocPhoto? = null,
+    @SerializedName("video") val video: VKDocPreviewVideo? = null
+)
+
+data class VKDocPhoto(
+    @SerializedName("sizes") val sizes: List<VKPhotoSize> = emptyList()
+) {
+    fun bestSize(): VKPhotoSize? = sizes.maxByOrNull { it.width * it.height }
+}
+
+data class VKDocPreviewVideo(
+    @SerializedName("src") val src: String = "",
+    @SerializedName("width") val width: Int = 0,
+    @SerializedName("height") val height: Int = 0
+)
+
+data class VKSticker(
+    @SerializedName("sticker_id") val stickerId: Int = 0,
+    @SerializedName("product_id") val productId: Int = 0,
+    @SerializedName("images") val images: List<VKPhotoSize>? = null,
+    @SerializedName("images_with_background") val imagesWithBg: List<VKPhotoSize>? = null
+) {
+    fun bestImage(): VKPhotoSize? = (images ?: imagesWithBg)?.maxByOrNull { it.width * it.height }
+}
 
 data class VKPhoto(
     @SerializedName("id") val id: Int = 0,
@@ -118,10 +167,24 @@ data class VKPhotoSize(
 )
 
 data class VKVideo(
-    @SerializedName("id") val id: Int,
-    @SerializedName("title") val title: String,
-    @SerializedName("image") val image: List<VKPhotoSize>? = null
+    @SerializedName("id") val id: Int = 0,
+    @SerializedName("owner_id") val ownerId: Int = 0,
+    @SerializedName("title") val title: String = "",
+    @SerializedName("duration") val duration: Int = 0,
+    @SerializedName("image") val image: List<VKPhotoSize>? = null,
+    @SerializedName("player") val player: String? = null,
+    @SerializedName("files") val files: VKVideoFiles? = null
 )
+
+data class VKVideoFiles(
+    @SerializedName("mp4_1080") val mp4_1080: String? = null,
+    @SerializedName("mp4_720") val mp4_720: String? = null,
+    @SerializedName("mp4_480") val mp4_480: String? = null,
+    @SerializedName("mp4_360") val mp4_360: String? = null,
+    @SerializedName("mp4_240") val mp4_240: String? = null
+) {
+    fun bestUrl() = mp4_1080 ?: mp4_720 ?: mp4_480 ?: mp4_360 ?: mp4_240
+}
 
 data class VKLink(
     @SerializedName("url") val url: String,
