@@ -32,7 +32,6 @@ import coil.compose.AsyncImage
 import com.selfcode.vkplus.data.api.VKUserExtended
 import com.selfcode.vkplus.data.repository.VKRepository
 import com.selfcode.vkplus.data.repository.VKResult
-import com.selfcode.vkplus.data.repository.VKRepository
 import com.selfcode.vkplus.ui.theme.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -244,7 +243,7 @@ fun UserProfileScreen(
                                     color = OnSurfaceMuted, fontSize = 13.sp
                                 ) },
                                 confirmButton = {
-                                    TextButton(onClick = { viewModel.toggleBlock(userId); confirmBlock = false }) {
+                                    TextButton(onClick = { viewModel.toggleBlock(userId.toIntOrNull() ?: 0); confirmBlock = false }) {
                                         Text(if (isBlocked) "Разблокировать" else "Заблокировать",
                                             color = if (isBlocked) CyberBlue else ErrorRed)
                                     }
