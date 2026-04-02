@@ -140,7 +140,7 @@ fun ChatScreen(
                 listOf(
                     "↩ Ответить" to { replyToMessage = msg; showActionSheet = false; selectedMessage = null },
                     "➡ Переслать" to { forwardMessage = msg; showActionSheet = false; selectedMessage = null },
-                    "🌐 Перевести" to { viewModel.translateMessage(msg); showActionSheet = false; selectedMessage = null },
+                    "🌐 Перевести" to { viewModel.translateMessage(msg.id, msg.text); showActionSheet = false; selectedMessage = null },
                     "📋 Копировать" to { clipboard.setText(AnnotatedString(msg.text)); showActionSheet = false; selectedMessage = null },
                     "😀 Реакция" to { showReactions = true; showActionSheet = false },
                     "✏ Изменить" to { editingMessage = msg; inputText = msg.text; showActionSheet = false; selectedMessage = null },
@@ -167,7 +167,7 @@ fun ChatScreen(
                         }
                         Column {
                             Text(peerName, color = OnSurface, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            lastActivity?.let { Text(it, color = if (it == "онлайн сейчас") CyberAccent else OnSurfaceMuted, fontSize = 11.sp) }
+                            lastActivity?.let { activity -> Text(activity, color = if (activity == "онлайн сейчас") CyberAccent else OnSurfaceMuted, fontSize = 11.sp) }
                         }
                     }
                 },
@@ -342,7 +342,7 @@ private fun MessageBubble(
 
                 // Voice
                 message.voiceMessage?.let { voice ->
-                    VoiceMessagePlayer(voice)
+                    VoiceMessagePlayer(voice, isOutgoing = message.out == 1)
                 }
 
                 // Text
