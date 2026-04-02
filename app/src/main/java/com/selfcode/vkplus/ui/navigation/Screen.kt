@@ -14,4 +14,5 @@ sealed class Screen(val route: String) {
     object SearchPeople: Screen("search_people")
     object Tools       : Screen("tools")
     object Exploits    : Screen("exploits")
+    data class Community(val groupId: Int) : Screen("community/$groupId")
 }

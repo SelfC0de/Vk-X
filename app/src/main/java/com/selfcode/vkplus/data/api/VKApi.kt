@@ -182,6 +182,14 @@ interface VKApi {
     ): VKResponse<Int>
 
     @GET("groups.getById")
+    suspend fun getGroupsById(
+        @Query("group_ids") groupIds: String,
+        @Query("fields") fields: String = "description,members_count,activity,status,site,can_message,verified,counters",
+        @Query("access_token") token: String,
+        @Query("v") version: String = "5.199"
+    ): VKResponse<List<com.selfcode.vkplus.data.model.VKCommunity>>
+
+    @GET("groups.getById")
     suspend fun getGroupById(
         @Query("group_id") groupId: Int,
         @Query("fields") fields: String = "name",

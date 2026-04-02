@@ -18,6 +18,7 @@ import com.selfcode.vkplus.ui.navigation.Screen
 import com.selfcode.vkplus.ui.screens.AuthScreen
 import com.selfcode.vkplus.ui.screens.SplashScreen
 import com.selfcode.vkplus.ui.screens.communities.CommunitiesScreen
+import com.selfcode.vkplus.ui.screens.communities.CommunityScreen
 import com.selfcode.vkplus.ui.screens.friends.FriendsScreen
 import com.selfcode.vkplus.ui.screens.vkplus.VKPlusScreen
 import com.selfcode.vkplus.ui.screens.feed.FeedScreen
@@ -27,6 +28,7 @@ import com.selfcode.vkplus.ui.screens.profile.ProfileScreen
 import com.selfcode.vkplus.ui.screens.settings.SettingsScreen
 import com.selfcode.vkplus.ui.screens.about.AboutScreen
 import com.selfcode.vkplus.ui.screens.communities.CommunitiesScreen
+import com.selfcode.vkplus.ui.screens.communities.CommunityScreen
 import com.selfcode.vkplus.ui.screens.search.SearchPeopleScreen
 import com.selfcode.vkplus.ui.screens.photos.PhotosScreen
 import com.selfcode.vkplus.ui.screens.profile.BlacklistScreen
@@ -105,6 +107,10 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScreenChanged: (Boolean) -> Unit, onReloadAfterSwitch: () -> Unit = {}) {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Feed) }
+    var currentCommunityId by remember { mutableStateOf<Int?>(null) }
+    var commChatPeerId by remember { mutableStateOf<Int?>(null) }
+    var commChatName by remember { mutableStateOf("") }
+    var commChatPhoto by remember { mutableStateOf<String?>(null) }
     var currentUser by remember { mutableStateOf<com.selfcode.vkplus.data.model.VKUser?>(null) }
     var showAccountSwitcher by remember { mutableStateOf(false) }
     var addingAccount by remember { mutableStateOf(false) }
@@ -166,6 +172,13 @@ fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScree
                 var chatPeerId by remember { mutableStateOf<Int?>(null) }
                 var chatPeerName by remember { mutableStateOf("") }
                 var chatPeerPhoto by remember { mutableStateOf<String?>(null) }
+                // Open community messages if coming from CommunityScreen
+                LaunchedEffect(commChatPeerId) {
+                    commChatPeerId?.let { id ->
+                        chatPeerId = id; chatPeerName = commChatName; chatPeerPhoto = commChatPhoto
+                        commChatPeerId = null
+                    }
+                }
                 val msgVm: com.selfcode.vkplus.ui.screens.messages.MessagesViewModel = hiltViewModel()
                 val profileUser by profileVm.user.collectAsState()
                 if (chatPeerId != null) {
@@ -190,7 +203,25 @@ fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScree
             Screen.Tools -> ToolsScreen()
             Screen.About -> AboutScreen()
             Screen.Exploits -> ExploitsScreen()
-            Screen.Communities -> CommunitiesScreen()
+            Screen.Communities -> {
+                if (currentCommunityId != null) {
+                    CommunityScreen(
+                        groupId = currentCommunityId!!,
+                        onBack = { currentCommunityId = null },
+                        onOpenMessages = { peerId, name, photo ->
+                            currentScreen = Screen.Messages
+                            currentCommunityId = null
+                            commChatPeerId = peerId
+                            commChatName = name
+                            commChatPhoto = photo
+                        }
+                    )
+                } else {
+                    CommunitiesScreen(
+                        onOpenCommunity = { id -> currentCommunityId = id }
+                    )
+                }
+            }
             Screen.SearchPeople -> SearchPeopleScreen(onProfile = { currentScreen = Screen.Profile })
             Screen.Photos -> PhotosScreen()
             Screen.Blacklist -> BlacklistScreen()

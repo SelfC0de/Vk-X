@@ -74,7 +74,7 @@ class CommunitiesViewModel @Inject constructor(private val repository: VKReposit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CommunitiesScreen(viewModel: CommunitiesViewModel = hiltViewModel()) {
+fun CommunitiesScreen(onOpenCommunity: (Int) -> Unit = {}, viewModel: CommunitiesViewModel = hiltViewModel()) {
     val communities by viewModel.communities.collectAsState()
     val searchResults by viewModel.searchResults.collectAsState()
     val loading by viewModel.loading.collectAsState()
@@ -106,7 +106,7 @@ fun CommunitiesScreen(viewModel: CommunitiesViewModel = hiltViewModel()) {
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(list, key = { it.id }) { community ->
-                    CommunityRow(community, viewModel)
+                    CommunityRow(community, viewModel, onClick = { onOpenCommunity(community.id) })
                 }
             }
         }
@@ -114,7 +114,7 @@ fun CommunitiesScreen(viewModel: CommunitiesViewModel = hiltViewModel()) {
 }
 
 @Composable
-private fun CommunityRow(community: VKCommunity, viewModel: CommunitiesViewModel) {
+private fun CommunityRow(community: VKCommunity, viewModel: CommunitiesViewModel, onClick: () -> Unit = {}) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically

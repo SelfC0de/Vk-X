@@ -317,7 +317,20 @@ data class VKCommunity(
     @SerializedName("is_member") val isMember: Int = 0,
     @SerializedName("members_count") val membersCount: Int = 0,
     @SerializedName("description") val description: String = "",
-    @SerializedName("activity") val activity: String = ""
+    @SerializedName("activity") val activity: String = "",
+    @SerializedName("status") val status: String = "",
+    @SerializedName("site") val site: String = "",
+    @SerializedName("can_message") val canMessage: Int = 0,
+    @SerializedName("verified") val verified: Int = 0,
+    @SerializedName("counters") val counters: VKGroupCounters? = null
+)
+
+data class VKGroupCounters(
+    @SerializedName("members") val members: Int = 0,
+    @SerializedName("photos") val photos: Int = 0,
+    @SerializedName("videos") val videos: Int = 0,
+    @SerializedName("topics") val topics: Int = 0,
+    @SerializedName("docs") val docs: Int = 0
 )
 
 data class VKCommunitiesResponse(

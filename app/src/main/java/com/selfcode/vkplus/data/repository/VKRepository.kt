@@ -336,6 +336,28 @@ class VKRepository @Inject constructor(
         VKResult.Success(Unit)
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
 
+    suspend fun getGroupById(groupId: Int): VKResult<com.selfcode.vkplus.data.model.VKCommunity> = runCatching {
+        val resp = api.getGroupsById(
+            groupIds = groupId.toString(),
+            fields = "description,members_count,activity,status,site,can_message,verified,counters",
+            token = token()
+        )
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        val group = resp.response?.firstOrNull() ?: return VKResult.Error("Сообщество не найдено")
+        VKResult.Success(group)
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun getGroupWall(groupId: Int, offset: Int = 0): VKResult<List<com.selfcode.vkplus.data.model.VKPost>> = runCatching {
+        val resp = api.getWall(
+            ownerId = -groupId,
+            offset = offset,
+            count = 20,
+            token = token()
+        )
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response?.items ?: emptyList())
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
     suspend fun searchGroups(query: String): VKResult<List<com.selfcode.vkplus.data.model.VKCommunity>> = runCatching {
         val resp = api.searchGroups(query = query, token = token())
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
