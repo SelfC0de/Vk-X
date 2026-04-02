@@ -709,6 +709,11 @@ data class VKMessagesResponse(
     @com.google.gson.annotations.SerializedName("items") val items: List<com.selfcode.vkplus.data.model.VKMessage> = emptyList()
 )
 
+data class VKAudioListResponse(
+    @com.google.gson.annotations.SerializedName("count") val count: Int = 0,
+    @com.google.gson.annotations.SerializedName("items") val items: List<com.selfcode.vkplus.data.model.VKAudio> = emptyList()
+)
+
 data class VKBannedResponse(
     @com.google.gson.annotations.SerializedName("count") val count: Int = 0,
     @com.google.gson.annotations.SerializedName("items") val items: List<Long> = emptyList(),

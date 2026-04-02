@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -406,8 +407,9 @@ private fun MiniPlayer(
             onValueChange = onSeek,
             modifier = Modifier.fillMaxWidth().height(20.dp).padding(horizontal = 0.dp),
             colors = SliderDefaults.colors(
-                thumbColor = CyberBlue, activeTrackColor = CyberBlue,
-                inactiveTrackColor = Divider, thumbSize = androidx.compose.ui.unit.DpSize(10.dp, 10.dp)
+                thumbColor = CyberBlue,
+                activeTrackColor = CyberBlue,
+                inactiveTrackColor = Divider
             )
         )
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),

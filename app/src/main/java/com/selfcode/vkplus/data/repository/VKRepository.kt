@@ -377,13 +377,15 @@ class VKRepository @Inject constructor(
     suspend fun getMyAudio(offset: Int = 0): VKResult<List<com.selfcode.vkplus.data.model.VKAudio>> = runCatching {
         val resp = api.getAudio(offset = offset, token = token())
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
-        VKResult.Success(resp.response?.items ?: emptyList())
+        val items: List<com.selfcode.vkplus.data.model.VKAudio> = resp.response?.items ?: emptyList()
+        VKResult.Success(items)
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
 
     suspend fun searchAudio(query: String, offset: Int = 0): VKResult<List<com.selfcode.vkplus.data.model.VKAudio>> = runCatching {
         val resp = api.searchAudio(query = query, offset = offset, token = token())
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
-        VKResult.Success(resp.response?.items ?: emptyList())
+        val items: List<com.selfcode.vkplus.data.model.VKAudio> = resp.response?.items ?: emptyList()
+        VKResult.Success(items)
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
 
     suspend fun addAudio(audioId: Int, ownerId: Int): VKResult<Int> = runCatching {
