@@ -267,12 +267,26 @@ fun MusicScreen(viewModel: MusicViewModel = hiltViewModel()) {
                     CircularProgressIndicator(color = CyberBlue)
                 }
                 state.error != null && state.currentTab == 0 -> Column(
-                    Modifier.fillMaxSize(), Arrangement.Center, Alignment.CenterHorizontally
+                    Modifier.fillMaxSize().padding(24.dp), Arrangement.Center, Alignment.CenterHorizontally
                 ) {
-                    Icon(Icons.Filled.MusicOff, null, tint = ErrorRed, modifier = Modifier.size(40.dp))
+                    Icon(Icons.Filled.MusicOff, null, tint = ErrorRed, modifier = Modifier.size(44.dp))
+                    Spacer(Modifier.height(12.dp))
+                    Text(state.error ?: "", color = ErrorRed, fontSize = 13.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                     Spacer(Modifier.height(8.dp))
-                    Text(state.error ?: "", color = ErrorRed, fontSize = 13.sp)
-                    Spacer(Modifier.height(8.dp))
+                    // Hint about Kate token
+                    if (state.error?.contains("токен", ignoreCase = true) == true ||
+                        state.error?.contains("доступ", ignoreCase = true) == true ||
+                        state.error?.contains("некорректный", ignoreCase = true) == true) {
+                        Text(
+                            "💡 Аудио VK работает только с токеном Kate Mobile (client_id 2685278). " +
+                            "На экране входа выберите «Kate Mobile» в дропдауне App ID.",
+                            color = OnSurfaceMuted, fontSize = 12.sp,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                    Spacer(Modifier.height(12.dp))
                     Button(onClick = { viewModel.loadMyAudio() }, colors = ButtonDefaults.buttonColors(containerColor = CyberBlue)) {
                         Text("Повторить")
                     }
