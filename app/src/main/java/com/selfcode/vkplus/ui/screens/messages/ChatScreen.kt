@@ -328,7 +328,6 @@ fun ChatScreen(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 private fun MessageBubble(
     message: VKMessage,
     translatedText: String?,
@@ -413,7 +412,7 @@ private fun MessageBubble(
     }
 }
 
-@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun AttachmentView(attach: VKAttachment, context: Context) {
     var mediaItem by remember { mutableStateOf<MediaPlayItem?>(null) }
