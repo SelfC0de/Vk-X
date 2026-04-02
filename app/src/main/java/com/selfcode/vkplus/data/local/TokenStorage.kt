@@ -51,13 +51,15 @@ class TokenStorage @Inject constructor(
         context.dataStore.edit { prefs ->
             prefs[KEY_TOKEN]   = token
             prefs[KEY_USER_ID] = userId
-            // Update saved accounts list
-            val current = getSavedAccountsSync(prefs)
-            val updated = current.toMutableList()
-            val idx = updated.indexOfFirst { it.userId == userId }
-            val account = SavedAccount(userId, token, name, photo)
-            if (idx >= 0) updated[idx] = account else updated.add(0, account)
-            prefs[KEY_ACCOUNTS] = gson.toJson(updated)
+            // Update saved accounts list — skip id=0 (unresolved user)
+            if (userId > 0) {
+                val current = getSavedAccountsSync(prefs)
+                val updated = current.toMutableList()
+                val idx = updated.indexOfFirst { it.userId == userId }
+                val account = SavedAccount(userId, token, name, photo)
+                if (idx >= 0) updated[idx] = account else updated.add(0, account)
+                prefs[KEY_ACCOUNTS] = gson.toJson(updated)
+            }
         }
     }
 

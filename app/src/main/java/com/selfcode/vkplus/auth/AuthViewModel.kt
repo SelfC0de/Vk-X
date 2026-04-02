@@ -75,6 +75,14 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun reloadAfterSwitch() {
+        viewModelScope.launch {
+            _authState.value = AuthState.Checking
+            val token = tokenStorage.accessToken.first()
+            _authState.value = if (!token.isNullOrEmpty()) AuthState.Authenticated else AuthState.Unauthenticated
+        }
+    }
+
     fun logout() {
         viewModelScope.launch {
             tokenStorage.clearToken()

@@ -123,8 +123,12 @@ fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScree
     // Account switcher overlay
     if (showAccountSwitcher) {
         com.selfcode.vkplus.auth.AccountSwitcherScreen(
-            onSwitched = { showAccountSwitcher = false },
-            onAddAccount = { showAccountSwitcher = false; addingAccount = true }
+            onSwitched = {
+                showAccountSwitcher = false
+                authViewModel.reloadAfterSwitch()  // force full profile reload
+            },
+            onAddAccount = { showAccountSwitcher = false; addingAccount = true },
+            onBack = { showAccountSwitcher = false }
         )
         return
     }

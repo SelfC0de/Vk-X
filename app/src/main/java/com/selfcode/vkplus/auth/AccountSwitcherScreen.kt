@@ -33,6 +33,7 @@ import com.selfcode.vkplus.ui.theme.*
 fun AccountSwitcherScreen(
     onSwitched: () -> Unit,
     onAddAccount: () -> Unit,
+    onBack: (() -> Unit)? = null,
     viewModel: AccountSwitcherViewModel = hiltViewModel()
 ) {
     val accounts by viewModel.accounts.collectAsState()
@@ -62,11 +63,19 @@ fun AccountSwitcherScreen(
         Box(
             modifier = Modifier.fillMaxWidth()
                 .background(Brush.verticalGradient(listOf(Color(0xFF0A1020), Background)))
-                .padding(horizontal = 20.dp, vertical = 24.dp)
+                .padding(horizontal = 12.dp, vertical = 16.dp)
         ) {
-            Column {
-                Text("VK+", color = CyberBlue, fontSize = 28.sp, fontWeight = FontWeight.Bold, letterSpacing = 4.sp)
-                Text("Смена аккаунта", color = OnSurfaceMuted, fontSize = 13.sp)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (onBack != null) {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Filled.ArrowBack, null, tint = OnSurface)
+                    }
+                    Spacer(Modifier.width(4.dp))
+                }
+                Column {
+                    Text("VK+", color = CyberBlue, fontSize = 24.sp, fontWeight = FontWeight.Bold, letterSpacing = 4.sp)
+                    Text("Смена аккаунта", color = OnSurfaceMuted, fontSize = 12.sp)
+                }
             }
         }
 
