@@ -61,7 +61,8 @@ fun ChatScreen(
     val isSending by viewModel.isSending.collectAsState()
     val translatedMessages by viewModel.translatedMessages.collectAsState()
     val translateLoading by viewModel.translateLoading.collectAsState()
-    val lastActivity by viewModel.lastActivity.collectAsState()
+    val lastActivityMap by viewModel.lastActivity.collectAsState()
+    val lastActivity: String? = lastActivityMap[peerId]
     val listState = rememberLazyListState()
     val clipboard = LocalClipboardManager.current
     val context = LocalContext.current
