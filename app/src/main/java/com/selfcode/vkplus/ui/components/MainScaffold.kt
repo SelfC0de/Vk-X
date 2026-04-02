@@ -39,6 +39,7 @@ private val mainDrawerItems = listOf(
     DrawerItem(Screen.Messages,    "Сообщения",   Icons.Outlined.Message,  Icons.Filled.Message),
     DrawerItem(Screen.Friends,     "Друзья",      Icons.Outlined.People,   Icons.Filled.People),
     DrawerItem(Screen.Communities, "Сообщества",  Icons.Outlined.Group,    Icons.Filled.Group),
+    DrawerItem(Screen.Music,       "Музыка",      Icons.Outlined.MusicNote, Icons.Filled.MusicNote),
     DrawerItem(Screen.Settings,    "Настройки",   Icons.Outlined.Settings, Icons.Filled.Settings),
     DrawerItem(Screen.About,       "About Dev",   Icons.Outlined.Info,     Icons.Filled.Info),
 )
@@ -181,6 +182,7 @@ fun MainScaffold(
                                 Screen.Communities -> "Сообщества"
                                 Screen.Settings -> "Настройки"
                                 Screen.About -> "About Dev"
+                                Screen.Music -> "Музыка"
                                 Screen.VKPlus -> "VK+"
                                 else -> "VK+"
                             },

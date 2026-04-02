@@ -27,6 +27,7 @@ import com.selfcode.vkplus.ui.screens.messages.MessagesScreen
 import com.selfcode.vkplus.ui.screens.profile.ProfileScreen
 import com.selfcode.vkplus.ui.screens.settings.SettingsScreen
 import com.selfcode.vkplus.ui.screens.about.AboutScreen
+import com.selfcode.vkplus.ui.screens.music.MusicScreen
 import com.selfcode.vkplus.ui.screens.communities.CommunitiesScreen
 import com.selfcode.vkplus.ui.screens.communities.CommunityScreen
 import com.selfcode.vkplus.ui.screens.search.SearchPeopleScreen
@@ -221,6 +222,7 @@ fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScree
             Screen.Settings -> SettingsScreen(onAntiScreenChanged = onAntiScreenChanged)
             Screen.Tools -> ToolsScreen()
             Screen.About -> AboutScreen()
+            Screen.Music -> MusicScreen()
             Screen.Exploits -> ExploitsScreen()
             Screen.Communities -> {
                 if (currentCommunityId != null) {

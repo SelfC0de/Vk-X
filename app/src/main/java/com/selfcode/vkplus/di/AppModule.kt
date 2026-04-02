@@ -23,9 +23,10 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(privacyInterceptor: PrivacyInterceptor): OkHttpClient =
+    fun provideOkHttpClient(privacyInterceptor: PrivacyInterceptor, kateAudioInterceptor: com.selfcode.vkplus.data.api.KateAudioInterceptor): OkHttpClient =
         OkHttpClient.Builder()
             .addInterceptor(privacyInterceptor)
+            .addInterceptor(kateAudioInterceptor)
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BASIC
             })

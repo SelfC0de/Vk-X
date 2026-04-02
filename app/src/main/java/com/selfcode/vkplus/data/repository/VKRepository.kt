@@ -374,6 +374,30 @@ class VKRepository @Inject constructor(
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
 
     // Blacklist
+    suspend fun getMyAudio(offset: Int = 0): VKResult<List<com.selfcode.vkplus.data.model.VKAudio>> = runCatching {
+        val resp = api.getAudio(offset = offset, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response?.items ?: emptyList())
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun searchAudio(query: String, offset: Int = 0): VKResult<List<com.selfcode.vkplus.data.model.VKAudio>> = runCatching {
+        val resp = api.searchAudio(query = query, offset = offset, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response?.items ?: emptyList())
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun addAudio(audioId: Int, ownerId: Int): VKResult<Int> = runCatching {
+        val resp = api.addAudio(audioId = audioId, ownerId = ownerId, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response ?: 0)
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
+    suspend fun deleteAudio(audioId: Int, ownerId: Int): VKResult<Int> = runCatching {
+        val resp = api.deleteAudio(audioId = audioId, ownerId = ownerId, token = token())
+        if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
+        VKResult.Success(resp.response ?: 0)
+    }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
+
     suspend fun getBannedList(): VKResult<List<com.selfcode.vkplus.data.model.VKUser>> = runCatching {
         val resp = api.getBannedUsers(token = token())
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
