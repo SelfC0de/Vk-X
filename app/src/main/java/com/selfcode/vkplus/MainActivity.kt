@@ -103,7 +103,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScreenChanged: (Boolean) -> Unit) {
+fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScreenChanged: (Boolean) -> Unit, onReloadAfterSwitch: () -> Unit = {}) {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Feed) }
     var currentUser by remember { mutableStateOf<com.selfcode.vkplus.data.model.VKUser?>(null) }
     var showAccountSwitcher by remember { mutableStateOf(false) }
@@ -125,7 +125,7 @@ fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScree
         com.selfcode.vkplus.auth.AccountSwitcherScreen(
             onSwitched = {
                 showAccountSwitcher = false
-                authViewModel.reloadAfterSwitch()  // force full profile reload
+                onReloadAfterSwitch()
             },
             onAddAccount = { showAccountSwitcher = false; addingAccount = true },
             onBack = { showAccountSwitcher = false }
