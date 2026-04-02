@@ -32,6 +32,7 @@ import coil.compose.AsyncImage
 import com.selfcode.vkplus.data.api.VKUserExtended
 import com.selfcode.vkplus.data.repository.VKRepository
 import com.selfcode.vkplus.data.repository.VKResult
+import com.selfcode.vkplus.data.repository.VKRepository
 import com.selfcode.vkplus.ui.theme.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,6 +50,8 @@ class UserProfileViewModel @Inject constructor(private val repository: VKReposit
     val error: StateFlow<String?> = _error
     private val _lastActivity = MutableStateFlow<String?>(null)
     val lastActivity: StateFlow<String?> = _lastActivity
+    private val _isBlocked = MutableStateFlow(false)
+    val isBlocked: StateFlow<Boolean> = _isBlocked
 
     fun load(userId: String) {
         viewModelScope.launch {
@@ -62,6 +65,14 @@ class UserProfileViewModel @Inject constructor(private val repository: VKReposit
                 is VKResult.Error -> _error.value = r.message
             }
             _loading.value = false
+        }
+    }
+
+    fun toggleBlock(userId: Int) {
+        viewModelScope.launch {
+            val currently = _isBlocked.value
+            val result = if (currently) repository.unbanUser(userId) else repository.banUser(userId)
+            if (result is VKResult.Success) _isBlocked.value = !currently
         }
     }
 
@@ -102,6 +113,7 @@ fun UserProfileScreen(
     val loading by viewModel.loading.collectAsState()
     val error by viewModel.error.collectAsState()
     val lastActivity by viewModel.lastActivity.collectAsState()
+    val isBlocked by viewModel.isBlocked.collectAsState()
 
     LaunchedEffect(userId) { viewModel.load(userId) }
 
@@ -216,6 +228,55 @@ fun UserProfileScreen(
                             }
                         }
                         if (u.followersCount > 0) ProfileInfoRow(Icons.Filled.People, "Подписчики", formatCount(u.followersCount))
+
+                        Spacer(Modifier.height(16.dp))
+
+                        // Block/Unblock button
+                        var confirmBlock by remember { mutableStateOf(false) }
+                        if (confirmBlock) {
+                            AlertDialog(
+                                onDismissRequest = { confirmBlock = false },
+                                containerColor = Surface,
+                                title = { Text(if (isBlocked) "Разблокировать?" else "Заблокировать?", color = OnSurface) },
+                                text = { Text(
+                                    if (isBlocked) "${u.fullName} будет удалён из чёрного списка."
+                                    else "${u.fullName} будет добавлен в чёрный список. Он не сможет видеть вашу страницу.",
+                                    color = OnSurfaceMuted, fontSize = 13.sp
+                                ) },
+                                confirmButton = {
+                                    TextButton(onClick = { viewModel.toggleBlock(userId); confirmBlock = false }) {
+                                        Text(if (isBlocked) "Разблокировать" else "Заблокировать",
+                                            color = if (isBlocked) CyberBlue else ErrorRed)
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { confirmBlock = false }) { Text("Отмена", color = OnSurfaceMuted) }
+                                }
+                            )
+                        }
+                        OutlinedButton(
+                            onClick = { confirmBlock = true },
+                            shape = RoundedCornerShape(10.dp),
+                            border = ButtonDefaults.outlinedButtonBorder.copy(
+                                brush = androidx.compose.ui.graphics.SolidColor(
+                                    if (isBlocked) CyberBlue.copy(0.5f) else ErrorRed.copy(0.5f)
+                                )
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                if (isBlocked) Icons.Filled.LockOpen else Icons.Filled.Block,
+                                null,
+                                tint = if (isBlocked) CyberBlue else ErrorRed,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                if (isBlocked) "Разблокировать" else "Заблокировать",
+                                color = if (isBlocked) CyberBlue else ErrorRed,
+                                fontSize = 14.sp
+                            )
+                        }
 
                         Spacer(Modifier.height(32.dp))
                     }

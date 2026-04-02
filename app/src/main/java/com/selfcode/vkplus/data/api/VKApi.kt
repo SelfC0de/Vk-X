@@ -362,7 +362,9 @@ interface VKApi {
     // Blacklist
     @GET("account.getBanned")
     suspend fun getBannedUsers(
-        @Query("count") count: Int = 50,
+        @Query("count") count: Int = 200,
+        @Query("offset") offset: Int = 0,
+        @Query("fields") fields: String = "photo_100,photo_200",
         @Query("access_token") token: String,
         @Query("v") version: String = "5.199"
     ): VKResponse<VKBannedResponse>
@@ -673,7 +675,8 @@ data class VKMessagesResponse(
 
 data class VKBannedResponse(
     @com.google.gson.annotations.SerializedName("count") val count: Int = 0,
-    @com.google.gson.annotations.SerializedName("items") val items: List<com.selfcode.vkplus.data.model.VKUser> = emptyList()
+    @com.google.gson.annotations.SerializedName("items") val items: List<Int> = emptyList(),
+    @com.google.gson.annotations.SerializedName("profiles") val profiles: List<com.selfcode.vkplus.data.model.VKUser> = emptyList()
 )
 
 data class VKSaveProfileResponse(

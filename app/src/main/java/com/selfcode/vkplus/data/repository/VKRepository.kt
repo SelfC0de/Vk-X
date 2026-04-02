@@ -375,7 +375,11 @@ class VKRepository @Inject constructor(
     suspend fun getBannedList(): VKResult<List<com.selfcode.vkplus.data.model.VKUser>> = runCatching {
         val resp = api.getBannedUsers(token = token())
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
-        VKResult.Success(resp.response?.items ?: emptyList())
+        val data = resp.response ?: return VKResult.Success(emptyList())
+        // profiles contains full user objects ordered by items IDs
+        val profileMap = data.profiles.associateBy { it.id }
+        val ordered = data.items.mapNotNull { profileMap[it] }
+        VKResult.Success(ordered)
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
 
     suspend fun banUser(userId: Int): VKResult<Unit> = runCatching {
