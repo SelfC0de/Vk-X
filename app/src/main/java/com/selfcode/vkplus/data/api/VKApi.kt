@@ -675,7 +675,7 @@ data class VKMessagesResponse(
 
 data class VKBannedResponse(
     @com.google.gson.annotations.SerializedName("count") val count: Int = 0,
-    @com.google.gson.annotations.SerializedName("items") val items: List<Int> = emptyList(),
+    @com.google.gson.annotations.SerializedName("items") val items: List<Long> = emptyList(),
     @com.google.gson.annotations.SerializedName("profiles") val profiles: List<com.selfcode.vkplus.data.model.VKUser> = emptyList()
 )
 

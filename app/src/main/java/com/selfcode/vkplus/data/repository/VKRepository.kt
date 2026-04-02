@@ -377,7 +377,7 @@ class VKRepository @Inject constructor(
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
         val data = resp.response ?: return VKResult.Success(emptyList())
         // profiles contains full user objects ordered by items IDs
-        val profileMap = data.profiles.associateBy { it.id }
+        val profileMap = data.profiles.associateBy { it.id.toLong() }
         val ordered = data.items.mapNotNull { profileMap[it] }
         VKResult.Success(ordered)
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }

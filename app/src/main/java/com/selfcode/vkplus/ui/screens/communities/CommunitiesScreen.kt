@@ -116,7 +116,9 @@ fun CommunitiesScreen(onOpenCommunity: (Int) -> Unit = {}, viewModel: Communitie
 @Composable
 private fun CommunityRow(community: VKCommunity, viewModel: CommunitiesViewModel, onClick: () -> Unit = {}) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+        modifier = Modifier.fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         AsyncImage(model = community.photo100, contentDescription = null,
