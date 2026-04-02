@@ -142,15 +142,24 @@ fun ChatScreen(
         ModalBottomSheet(onDismissRequest = { showActionSheet = false; selectedMessage = null },
             containerColor = Surface) {
             Column(modifier = Modifier.padding(bottom = 24.dp)) {
-                listOf(
-                    "↩ Ответить" to { replyToMessage = msg; showActionSheet = false; selectedMessage = null },
-                    "➡ Переслать" to { forwardMessage = msg; showActionSheet = false; selectedMessage = null },
-                    "🌐 Перевести" to { viewModel.translateMessage(msg.id, msg.text); showActionSheet = false; selectedMessage = null },
-                    "📋 Копировать" to { clipboard.setText(AnnotatedString(msg.text)); showActionSheet = false; selectedMessage = null },
-                    "😀 Реакция" to { showReactions = true; showActionSheet = false },
-                    "✏ Изменить" to { editingMessage = msg; inputText = msg.text; showActionSheet = false; selectedMessage = null },
-                    "🗑 Удалить" to { viewModel.deleteMessage(peerId, msg.id); showActionSheet = false; selectedMessage = null }
-                ).forEach { (label, action) ->
+                val voiceUrl = msg.voiceMessage?.let { it.linkMp3 ?: it.linkOgg }
+                val actionItems = buildList {
+                    add("↩ Ответить" to { replyToMessage = msg; showActionSheet = false; selectedMessage = null })
+                    add("➡ Переслать" to { forwardMessage = msg; showActionSheet = false; selectedMessage = null })
+                    add("🌐 Перевести" to { viewModel.translateMessage(msg.id, msg.text); showActionSheet = false; selectedMessage = null })
+                    add("📋 Копировать" to { clipboard.setText(AnnotatedString(msg.text)); showActionSheet = false; selectedMessage = null })
+                    add("😀 Реакция" to { showReactions = true; showActionSheet = false })
+                    if (voiceUrl != null) {
+                        add("⬇ Скачать VM" to {
+                            val fname = "voice_${msg.id}_${System.currentTimeMillis()}.mp3"
+                            downloadFile(context, voiceUrl, fname, "audio/mpeg")
+                            showActionSheet = false; selectedMessage = null
+                        })
+                    }
+                    add("✏ Изменить" to { editingMessage = msg; inputText = msg.text; showActionSheet = false; selectedMessage = null })
+                    add("🗑 Удалить" to { viewModel.deleteMessage(peerId, msg.id); showActionSheet = false; selectedMessage = null })
+                }
+                actionItems.forEach { (label, action) ->
                     TextButton(onClick = action, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 2.dp)) {
                         Text(label, color = OnSurface, fontSize = 15.sp, modifier = Modifier.fillMaxWidth())
                     }

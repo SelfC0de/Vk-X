@@ -131,7 +131,14 @@ fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScree
     openProfileUserId?.let { uid ->
         com.selfcode.vkplus.ui.screens.profile.UserProfileScreen(
             userId = uid,
-            onBack = { openProfileUserId = null }
+            onBack = { openProfileUserId = null },
+            onWriteMessage = { peerId ->
+                openProfileUserId = null
+                commChatPeerId = peerId
+                commChatName = ""
+                commChatPhoto = null
+                currentScreen = Screen.Messages
+            }
         )
         return@AuthenticatedApp
     }
