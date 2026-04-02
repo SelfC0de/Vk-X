@@ -159,15 +159,17 @@ fun ChatScreen(
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        peerPhoto?.let {
-                            AsyncImage(model = it, contentDescription = null,
+                        if (peerPhoto != null) {
+                            AsyncImage(model = peerPhoto, contentDescription = null,
                                 modifier = Modifier.size(36.dp).clip(CircleShape).background(SurfaceVariant),
                                 contentScale = ContentScale.Crop)
                             Spacer(Modifier.width(10.dp))
                         }
                         Column {
                             Text(peerName, color = OnSurface, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            lastActivity?.let { activity -> Text(activity, color = if (activity == "онлайн сейчас") CyberAccent else OnSurfaceMuted, fontSize = 11.sp) }
+                            if (lastActivity != null) {
+                                Text(lastActivity, color = if (lastActivity == "онлайн сейчас") CyberAccent else OnSurfaceMuted, fontSize = 11.sp)
+                            }
                         }
                     }
                 },
