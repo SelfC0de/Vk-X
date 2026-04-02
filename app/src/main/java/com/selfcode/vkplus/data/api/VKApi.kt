@@ -152,7 +152,7 @@ interface VKApi {
     @GET("users.get")
     suspend fun getUserExtended(
         @Query("user_ids") userIds: String,
-        @Query("fields") fields: String = "photo_200,photo_100,online,last_seen,status,city,bdate,followers_count,counters,occupation,relation",
+        @Query("fields") fields: String = "photo_200,photo_100,online,last_seen,status,city,bdate,followers_count,counters,occupation,relation,screen_name",
         @Query("access_token") token: String,
         @Query("v") version: String = "5.199"
     ): VKResponse<List<VKUserExtended>>
@@ -186,7 +186,7 @@ interface VKApi {
         @Query("group_ids") groupIds: String,
         @Query("fields") fields: String = "description,members_count,activity,status,site,can_message,verified,counters",
         @Query("access_token") token: String,
-        @Query("v") version: String = "5.199"
+        @Query("v") version: String = "5.131"
     ): VKResponse<List<com.selfcode.vkplus.data.model.VKCommunity>>
 
     @GET("groups.getById")
@@ -580,7 +580,9 @@ data class VKUserExtended(
     @com.google.gson.annotations.SerializedName("followers_count") val followersCount: Int = 0,
     @com.google.gson.annotations.SerializedName("occupation") val occupation: VKOccupation? = null,
     @com.google.gson.annotations.SerializedName("relation") val relation: Int = 0,
-    @com.google.gson.annotations.SerializedName("deactivated") val deactivated: String? = null
+    @com.google.gson.annotations.SerializedName("deactivated") val deactivated: String? = null,
+    @com.google.gson.annotations.SerializedName("screen_name") val screenName: String? = null,
+    @com.google.gson.annotations.SerializedName("last_seen") val lastSeen: com.selfcode.vkplus.data.model.VKLastSeen? = null
 ) {
     val fullName get() = "$firstName $lastName".trim()
     val isOnline get() = online == 1

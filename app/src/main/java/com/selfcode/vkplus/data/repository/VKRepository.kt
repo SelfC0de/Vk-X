@@ -343,8 +343,10 @@ class VKRepository @Inject constructor(
             token = token()
         )
         if (resp.error != null) return VKResult.Error(resp.error.message, resp.error.code)
-        val group = resp.response?.firstOrNull() ?: return VKResult.Error("Сообщество не найдено")
-        VKResult.Success(group)
+        // v5.131 returns array directly in response
+        val list = resp.response
+        if (!list.isNullOrEmpty()) return VKResult.Success(list.first())
+        return VKResult.Error("Сообщество не найдено")
     }.getOrElse { VKResult.Error(it.message ?: "Unknown error") }
 
     suspend fun getGroupWall(groupId: Int, offset: Int = 0): VKResult<List<com.selfcode.vkplus.data.model.VKPost>> = runCatching {
