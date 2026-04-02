@@ -109,6 +109,7 @@ fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScree
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Feed) }
     var currentCommunityId by remember { mutableStateOf<Int?>(null) }
     var commChatPeerId by remember { mutableStateOf<Int?>(null) }
+    var openProfileUserId by remember { mutableStateOf<String?>(null) }
     var commChatName by remember { mutableStateOf("") }
     var commChatPhoto by remember { mutableStateOf<String?>(null) }
     var currentUser by remember { mutableStateOf<com.selfcode.vkplus.data.model.VKUser?>(null) }
@@ -124,6 +125,15 @@ fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScree
             is VKResult.Success -> currentUser = r.data
             is VKResult.Error -> {}
         }
+    }
+
+    // User profile overlay from messages
+    openProfileUserId?.let { uid ->
+        com.selfcode.vkplus.ui.screens.profile.UserProfileScreen(
+            userId = uid,
+            onBack = { openProfileUserId = null }
+        )
+        return@AuthenticatedApp
     }
 
     // Account switcher overlay
@@ -184,7 +194,9 @@ fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScree
                 if (chatPeerId != null) {
                     com.selfcode.vkplus.ui.screens.messages.ChatScreen(
                         peerName = chatPeerName, peerPhoto = chatPeerPhoto,
-                        peerId = chatPeerId!!, onBack = { chatPeerId = null }, viewModel = msgVm
+                        peerId = chatPeerId!!, onBack = { chatPeerId = null },
+                        onOpenProfile = { uid -> openProfileUserId = uid },
+                        viewModel = msgVm
                     )
                 } else {
                     MessagesScreen(viewModel = msgVm, onOpenChat = { id, name, photo ->

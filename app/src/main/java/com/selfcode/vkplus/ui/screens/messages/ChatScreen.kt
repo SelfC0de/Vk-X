@@ -54,10 +54,13 @@ fun ChatScreen(
     peerPhoto: String?,
     peerId: Int,
     onBack: () -> Unit,
+    onOpenProfile: ((userId: String) -> Unit)? = null,
     viewModel: MessagesViewModel
 ) {
     val state by viewModel.uiState.collectAsState()
     val messages = state.chatMessages[peerId] ?: emptyList()
+    val profiles = state.profiles
+    val isGroupChat = peerId > 2_000_000_000
     val isLoadingOlder = state.isLoadingOlder
     val isSending by viewModel.isSending.collectAsState()
     val translatedMessages by viewModel.translatedMessages.collectAsState()
@@ -160,7 +163,14 @@ fun ChatScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.then(
+                            if (peerId > 0 && onOpenProfile != null)
+                                Modifier.clickable { onOpenProfile.invoke(peerId.toString()) }
+                            else Modifier
+                        )
+                    ) {
                         if (peerPhoto != null) {
                             AsyncImage(model = peerPhoto, contentDescription = null,
                                 modifier = Modifier.size(36.dp).clip(CircleShape).background(SurfaceVariant),
@@ -205,6 +215,11 @@ fun ChatScreen(
                             translatedText = translated,
                             isTranslating = isTranslating,
                             onLongClick = { selectedMessage = msg; showActionSheet = true },
+                            onAuthorClick = if (isGroupChat && msg.out == 0) {
+                                { onOpenProfile?.invoke(msg.fromId.toString()) }
+                            } else null,
+                            authorProfile = profiles[msg.fromId],
+                            showAuthor = isGroupChat && msg.out == 0,
                             context = context
                         )
                     }
@@ -304,11 +319,15 @@ fun ChatScreen(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 private fun MessageBubble(
     message: VKMessage,
     translatedText: String?,
     isTranslating: Boolean,
     onLongClick: () -> Unit,
+    onAuthorClick: (() -> Unit)? = null,
+    authorProfile: com.selfcode.vkplus.data.model.VKUser? = null,
+    showAuthor: Boolean = false,
     context: Context
 ) {
     val isOut = message.out == 1
@@ -320,6 +339,24 @@ private fun MessageBubble(
         modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
         horizontalAlignment = if (isOut) Alignment.End else Alignment.Start
     ) {
+        // Author row in group chats
+        if (showAuthor && authorProfile != null) {
+            Row(
+                modifier = Modifier
+                    .padding(horizontal = 4.dp, vertical = 1.dp)
+                    .then(if (onAuthorClick != null) Modifier.clickable(onClick = onAuthorClick) else Modifier),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AsyncImage(
+                    model = authorProfile.photo100, contentDescription = null,
+                    modifier = Modifier.size(18.dp).clip(CircleShape).background(SurfaceVariant),
+                    contentScale = ContentScale.Crop
+                )
+                Spacer(Modifier.width(5.dp))
+                Text(authorProfile.fullName, color = CyberBlue, fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold)
+            }
+        }
         Box(
             modifier = Modifier
                 .widthIn(max = 280.dp)
@@ -371,7 +408,33 @@ private fun MessageBubble(
 @Composable
 private fun AttachmentView(attach: VKAttachment, context: Context) {
     var mediaItem by remember { mutableStateOf<MediaPlayItem?>(null) }
+    var fullscreenPhoto by remember { mutableStateOf<String?>(null) }
     mediaItem?.let { MediaPlayerDialog(item = it, onDismiss = { mediaItem = null }) }
+
+    // Fullscreen photo viewer
+    fullscreenPhoto?.let { photoUrl ->
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { fullscreenPhoto = null },
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize().background(Color.Black)
+                    .clickable { fullscreenPhoto = null },
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = photoUrl, contentDescription = null,
+                    modifier = Modifier.fillMaxWidth(),
+                    contentScale = ContentScale.Fit
+                )
+                // Close hint
+                Box(modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
+                    .background(Color.Black.copy(0.5f), CircleShape).padding(8.dp)) {
+                    Icon(Icons.Filled.Close, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                }
+            }
+        }
+    }
 
     when (attach.type) {
         "photo" -> attach.photo?.bestSize()?.url?.let { url ->
@@ -380,7 +443,7 @@ private fun AttachmentView(attach: VKAttachment, context: Context) {
                 modifier = Modifier.fillMaxWidth().heightIn(max = 280.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .combinedClickable(
-                        onClick = { openUrl(context, url) },
+                        onClick = { fullscreenPhoto = url },
                         onLongClick = {
                             val name = "photo_${System.currentTimeMillis()}.jpg"
                             downloadFile(context, url, name, "image/jpeg")
