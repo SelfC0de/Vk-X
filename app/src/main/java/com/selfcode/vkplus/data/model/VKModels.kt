@@ -99,7 +99,15 @@ data class VKAttachment(
     @SerializedName("doc") val doc: VKDoc? = null,
     @SerializedName("sticker") val sticker: VKSticker? = null,
     @SerializedName("link") val link: VKLink? = null,
+    @SerializedName("graffiti") val graffiti: VKGraffiti? = null,
     @SerializedName("audio_message") val audioMessage: VKAudioMessage? = null
+)
+
+data class VKGraffiti(
+    @SerializedName("id") val id: Int = 0,
+    @SerializedName("url") val url: String = "",
+    @SerializedName("width") val width: Int = 0,
+    @SerializedName("height") val height: Int = 0
 )
 
 data class VKAudio(

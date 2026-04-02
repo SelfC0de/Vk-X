@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.selfcode.vkplus.data.model.*
 import com.selfcode.vkplus.ui.theme.*
+import android.widget.Toast
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -366,100 +367,123 @@ private fun MessageBubble(
     }
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun AttachmentView(attach: VKAttachment, context: Context) {
+    var mediaItem by remember { mutableStateOf<MediaPlayItem?>(null) }
+    mediaItem?.let { MediaPlayerDialog(item = it, onDismiss = { mediaItem = null }) }
+
     when (attach.type) {
         "photo" -> attach.photo?.bestSize()?.url?.let { url ->
             AsyncImage(
                 model = url, contentDescription = null,
                 modifier = Modifier.fillMaxWidth().heightIn(max = 280.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .clickable { openUrl(context, url) },
+                    .combinedClickable(
+                        onClick = { openUrl(context, url) },
+                        onLongClick = {
+                            val name = "photo_${System.currentTimeMillis()}.jpg"
+                            downloadFile(context, url, name, "image/jpeg")
+                        }
+                    ),
                 contentScale = ContentScale.FillWidth
             )
         }
+
         "video" -> attach.video?.let { video ->
             val thumb = video.image?.maxByOrNull { it.width * it.height }?.url
+            val playUrl = video.files?.bestUrl() ?: video.player
             Box(modifier = Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(8.dp))
-                .background(Color.Black).clickable {
-                    val url = video.player ?: video.files?.bestUrl()
-                    url?.let { openUrl(context, it) }
-                }) {
-                if (thumb != null) {
-                    AsyncImage(model = thumb, contentDescription = null,
-                        modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                }
-                Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)))
-                Icon(Icons.Filled.PlayCircle, null, tint = Color.White,
-                    modifier = Modifier.size(48.dp).align(Alignment.Center))
-                // Duration badge
+                .background(Color.Black)
+                .combinedClickable(
+                    onClick = {
+                        if (playUrl != null) mediaItem = MediaPlayItem.Video(playUrl, video.title, thumb)
+                        else openUrl(context, "https://vk.com/video${video.ownerId}_${video.id}")
+                    },
+                    onLongClick = {
+                        val dlUrl = video.files?.bestUrl()
+                        if (dlUrl != null) downloadFile(context, dlUrl, "${video.title}.mp4", "video/mp4")
+                        else Toast.makeText(context, "Прямая ссылка недоступна", Toast.LENGTH_SHORT).show()
+                    }
+                )) {
+                if (thumb != null) AsyncImage(model = thumb, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)))
+                Icon(Icons.Filled.PlayCircle, null, tint = Color.White, modifier = Modifier.size(52.dp).align(Alignment.Center))
                 if (video.duration > 0) {
                     val dur = "%d:%02d".format(video.duration / 60, video.duration % 60)
-                    Box(modifier = Modifier.align(Alignment.BottomEnd).padding(6.dp)
-                        .background(Color.Black.copy(0.7f), RoundedCornerShape(4.dp)).padding(horizontal = 5.dp, vertical = 2.dp)) {
+                    Box(modifier = Modifier.align(Alignment.BottomEnd).padding(6.dp).background(Color.Black.copy(0.7f), RoundedCornerShape(4.dp)).padding(horizontal = 5.dp, vertical = 2.dp)) {
                         Text(dur, color = Color.White, fontSize = 11.sp)
                     }
                 }
-                // Title
                 if (video.title.isNotBlank()) {
-                    Box(modifier = Modifier.align(Alignment.TopStart).padding(6.dp)
-                        .background(Color.Black.copy(0.6f), RoundedCornerShape(4.dp)).padding(horizontal = 5.dp, vertical = 2.dp)) {
+                    Box(modifier = Modifier.align(Alignment.TopStart).padding(6.dp).background(Color.Black.copy(0.6f), RoundedCornerShape(4.dp)).padding(horizontal = 5.dp, vertical = 2.dp)) {
                         Text(video.title, color = Color.White, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }
         }
+
         "audio" -> attach.audio?.let { audio ->
-            Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp))
-                .background(Surface).clickable { audio.url.takeIf { it.isNotBlank() }?.let { openUrl(context, it) } }
-                .padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Surface)
+                .combinedClickable(
+                    onClick = { if (audio.url.isNotBlank()) mediaItem = MediaPlayItem.Audio(audio.url, audio.artist, audio.title, audio.duration) },
+                    onLongClick = { if (audio.url.isNotBlank()) downloadFile(context, audio.url, "${audio.artist} - ${audio.title}.mp3", "audio/mpeg") }
+                ).padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.MusicNote, null, tint = CyberBlue, modifier = Modifier.size(32.dp))
                 Spacer(Modifier.width(8.dp))
                 Column(Modifier.weight(1f)) {
                     Text("${audio.artist} — ${audio.title}", color = OnSurface, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    val dur = "%d:%02d".format(audio.duration / 60, audio.duration % 60)
-                    Text(dur, color = OnSurfaceMuted, fontSize = 11.sp)
+                    Text("%d:%02d".format(audio.duration / 60, audio.duration % 60), color = OnSurfaceMuted, fontSize = 11.sp)
                 }
                 Icon(Icons.Filled.PlayArrow, null, tint = CyberBlue, modifier = Modifier.size(24.dp))
             }
         }
+
         "doc" -> attach.doc?.let { doc ->
+            val isGif = doc.ext.lowercase() == "gif"
             val iconColor = when (doc.ext.lowercase()) {
-                "pdf" -> Color(0xFFE53935)
-                "doc", "docx" -> Color(0xFF1565C0)
-                "xls", "xlsx" -> Color(0xFF2E7D32)
-                "zip", "rar", "7z" -> Color(0xFFFF6F00)
-                "mp4", "avi", "mov" -> Color(0xFF6A1B9A)
-                else -> OnSurfaceMuted
+                "pdf" -> Color(0xFFE53935); "doc","docx" -> Color(0xFF1565C0)
+                "xls","xlsx" -> Color(0xFF2E7D32); "zip","rar","7z" -> Color(0xFFFF6F00)
+                "mp4","avi","mov","gif" -> Color(0xFF6A1B9A); else -> OnSurfaceMuted
             }
-            Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp))
-                .background(Surface).clickable { openUrl(context, doc.url) }
-                .padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.InsertDriveFile, null, tint = iconColor, modifier = Modifier.size(32.dp))
-                Spacer(Modifier.width(8.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(doc.title, color = OnSurface, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    val sizeStr = when {
-                        doc.size > 1_048_576 -> "%.1f МБ".format(doc.size / 1_048_576f)
-                        doc.size > 1024 -> "%.0f КБ".format(doc.size / 1024f)
-                        else -> "${doc.size} Б"
+            if (isGif && doc.url.isNotBlank()) {
+                Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp))
+                    .combinedClickable(
+                        onClick = { mediaItem = MediaPlayItem.Gif(doc.url) },
+                        onLongClick = { downloadFile(context, doc.url, doc.title.ifBlank { "anim.gif" }, "image/gif") }
+                    )) {
+                    AsyncImage(model = doc.url, contentDescription = "GIF", modifier = Modifier.fillMaxWidth().heightIn(max = 240.dp))
+                    Box(modifier = Modifier.align(Alignment.TopStart).padding(4.dp).background(Color.Black.copy(0.6f), RoundedCornerShape(4.dp)).padding(horizontal = 5.dp, vertical = 2.dp)) {
+                        Text("GIF", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     }
-                    Text("${doc.ext.uppercase()} · $sizeStr", color = OnSurfaceMuted, fontSize = 11.sp)
                 }
-                Icon(Icons.Filled.Download, null, tint = CyberBlue, modifier = Modifier.size(22.dp))
+            } else {
+                Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Surface)
+                    .combinedClickable(
+                        onClick = { openUrl(context, doc.url) },
+                        onLongClick = { downloadFile(context, doc.url, doc.title.ifBlank { "file.${doc.ext}" }, mimeFromExt(doc.ext)) }
+                    ).padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.InsertDriveFile, null, tint = iconColor, modifier = Modifier.size(32.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(doc.title, color = OnSurface, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        val sz = when { doc.size > 1_048_576 -> "%.1f МБ".format(doc.size/1_048_576f); doc.size > 1024 -> "%.0f КБ".format(doc.size/1024f); else -> "${doc.size} Б" }
+                        Text("${doc.ext.uppercase()} · $sz", color = OnSurfaceMuted, fontSize = 11.sp)
+                    }
+                    Icon(Icons.Filled.Download, null, tint = CyberBlue, modifier = Modifier.size(22.dp))
+                }
             }
         }
+
         "sticker" -> attach.sticker?.let { sticker ->
-            val img = sticker.bestImage()
-            if (img != null) {
-                AsyncImage(model = img.url, contentDescription = "Стикер",
-                    modifier = Modifier.size(120.dp), contentScale = ContentScale.Fit)
+            sticker.bestImage()?.let { img ->
+                AsyncImage(model = img.url, contentDescription = "Стикер", modifier = Modifier.size(120.dp), contentScale = ContentScale.Fit)
             }
         }
+
         "link" -> attach.link?.let { link ->
-            Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp))
-                .background(Surface).clickable { openUrl(context, link.realUrl) }.padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Surface)
+                .clickable { openUrl(context, link.realUrl) }.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Link, null, tint = CyberBlue, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Column(Modifier.weight(1f)) {
@@ -467,6 +491,12 @@ private fun AttachmentView(attach: VKAttachment, context: Context) {
                     Text(link.realUrl, color = CyberBlue, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
+        }
+
+        "graffiti" -> attach.graffiti?.let { g ->
+            AsyncImage(model = g.url, contentDescription = "Граффити",
+                modifier = Modifier.fillMaxWidth().heightIn(max = 200.dp).clip(RoundedCornerShape(8.dp))
+                    .combinedClickable(onClick = {}, onLongClick = { downloadFile(context, g.url, "graffiti.png", "image/png") }))
         }
     }
 }
