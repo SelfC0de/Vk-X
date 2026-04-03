@@ -320,14 +320,14 @@ private fun TokenTab(onManualToken: (String) -> Unit, showInvalidError: Boolean)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (token.isNotBlank()) {
                             IconButton(onClick = { token = ""; error = null }) {
-                                Icon(Icons.Filled.Clear, null, tint = OnSurfaceMuted, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Filled.Close, null, tint = OnSurfaceMuted, modifier = Modifier.size(18.dp))
                             }
                         } else {
                             IconButton(onClick = {
                                 val txt = clipboardManager.getText()?.text?.trim() ?: ""
                                 if (txt.isNotBlank()) { token = txt; error = null }
                             }) {
-                                Icon(Icons.Filled.ContentPaste, null, tint = CyberBlue, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Outlined.ContentPaste, null, tint = CyberBlue, modifier = Modifier.size(18.dp))
                             }
                         }
                         IconButton(onClick = { tokenVisible = !tokenVisible }) {
