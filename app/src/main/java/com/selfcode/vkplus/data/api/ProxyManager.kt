@@ -14,14 +14,9 @@ import javax.inject.Singleton
 
 @Singleton
 class ProxyManager @Inject constructor(
-    private val privacyInterceptor: PrivacyInterceptor,
-    private val uaInterceptor: UserAgentSwitcherInterceptor
+    private val privacyInterceptor: PrivacyInterceptor
 ) {
-    fun buildClient(
-        cfg: ProxyConfig? = null,
-        sniEnabled: Boolean = false,
-        uaEnabled: Boolean = false
-    ): OkHttpClient {
+    fun buildClient(cfg: ProxyConfig? = null): OkHttpClient {
         val builder = OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
@@ -29,27 +24,10 @@ class ProxyManager @Inject constructor(
             .addInterceptor(privacyInterceptor)
             .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.NONE })
 
-        // SNI Spoofing
-        if (sniEnabled) {
-            try {
-                val (sslFactory, trustManager) = SpoofedSSLSocketFactory.create("cloudflare.com")
-                builder.sslSocketFactory(sslFactory, trustManager)
-                builder.protocols(listOf(okhttp3.Protocol.HTTP_1_1))
-            } catch (e: Exception) {
-                // SNI setup failed - continue without it
-            }
-        }
-
-        // User-Agent Switcher
-        if (uaEnabled) {
-            builder.addInterceptor(uaInterceptor)
-        }
-
         if (cfg != null && cfg.enabled && cfg.host.isNotBlank()) {
             val proxyType = if (cfg.type == "HTTP") Proxy.Type.HTTP else Proxy.Type.SOCKS
             val proxy = Proxy(proxyType, InetSocketAddress(cfg.host, cfg.port))
             builder.proxy(proxy)
-            // Force HTTP/1.1 through proxy to avoid QUIC/UDP blocks
             builder.protocols(listOf(Protocol.HTTP_1_1))
 
             if (cfg.user.isNotBlank()) {

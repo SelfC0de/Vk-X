@@ -39,8 +39,6 @@ class SettingsStore @Inject constructor(
         val KEY_BYPASS_SHORT_URL   = booleanPreferencesKey("bypass_short_url")
         val KEY_LONGPOLL_ONLY      = booleanPreferencesKey("longpoll_only")
         val KEY_HARDWARE_SPOOF     = booleanPreferencesKey("hardware_spoof")
-        val KEY_SNI_SPOOF          = booleanPreferencesKey("sni_spoof")
-        val KEY_UA_SWITCHER        = booleanPreferencesKey("ua_switcher")
     }
 
     val unRead:       Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_UNREAD]        ?: false }
@@ -62,8 +60,6 @@ class SettingsStore @Inject constructor(
     val bypassShortUrl:    Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_BYPASS_SHORT_URL]   ?: false }
     val longPollOnly:      Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_LONGPOLL_ONLY]      ?: false }
     val hardwareSpoof:     Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_HARDWARE_SPOOF]     ?: false }
-    val sniSpoof:          Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_SNI_SPOOF]          ?: false }
-    val uaSwitcher:        Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_UA_SWITCHER]        ?: false }
 
     suspend fun setUnRead(v: Boolean)        = context.settingsDataStore.edit { it[KEY_UNREAD]        = v }
     suspend fun setUnType(v: Boolean)        = context.settingsDataStore.edit { it[KEY_UNTYPE]        = v }
@@ -84,8 +80,6 @@ class SettingsStore @Inject constructor(
     suspend fun setBypassShortUrl(v: Boolean)     = context.settingsDataStore.edit { it[KEY_BYPASS_SHORT_URL]   = v }
     suspend fun setLongPollOnly(v: Boolean)       = context.settingsDataStore.edit { it[KEY_LONGPOLL_ONLY]      = v }
     suspend fun setHardwareSpoof(v: Boolean)      = context.settingsDataStore.edit { it[KEY_HARDWARE_SPOOF]     = v }
-    suspend fun setSniSpoof(v: Boolean)           = context.settingsDataStore.edit { it[KEY_SNI_SPOOF]          = v }
-    suspend fun setUaSwitcher(v: Boolean)         = context.settingsDataStore.edit { it[KEY_UA_SWITCHER]        = v }
 }
 
 enum class DeviceProfile(val label: String, val ua: String) {
