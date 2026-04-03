@@ -59,43 +59,37 @@ class ProxyViewModel @Inject constructor(
     }
 
     fun ping(cfg: ProxyConfig) = viewModelScope.launch {
-        val ms = withContext(Dispatchers.IO) {
-            try {
-                val t = System.currentTimeMillis()
-                Socket().use { s ->
-                    s.connect(InetSocketAddress(cfg.host, cfg.port), 3000)
-                }
-                System.currentTimeMillis() - t
-            } catch (e: Exception) { -1L }
-        }
+        if (cfg.id.isBlank() || cfg.host.isBlank()) return@launch
+        val ms = withContext(Dispatchers.IO) { tcpPing(cfg.host, cfg.port) }
         storage.updatePing(cfg.id, ms)
     }
 
     fun pingLatest() = viewModelScope.launch {
+        kotlinx.coroutines.delay(500)
         val last = list.value.lastOrNull() ?: return@launch
-        val ms = withContext(Dispatchers.IO) {
-            try {
-                val t = System.currentTimeMillis()
-                Socket().use { s -> s.connect(InetSocketAddress(last.host, last.port), 3000) }
-                System.currentTimeMillis() - t
-            } catch (e: Exception) { -1L }
-        }
+        if (last.host.isBlank() || last.id.isBlank()) return@launch
+        val ms = withContext(Dispatchers.IO) { tcpPing(last.host, last.port) }
         storage.updatePing(last.id, ms)
     }
 
     fun pingAll() = viewModelScope.launch {
-        list.value.forEach { cfg ->
+        list.value.filter { it.host.isNotBlank() && it.id.isNotBlank() }.forEach { cfg ->
             launch {
-                val ms = withContext(Dispatchers.IO) {
-                    try {
-                        val t = System.currentTimeMillis()
-                        Socket().use { s -> s.connect(InetSocketAddress(cfg.host, cfg.port), 3000) }
-                        System.currentTimeMillis() - t
-                    } catch (e: Exception) { -1L }
-                }
+                val ms = withContext(Dispatchers.IO) { tcpPing(cfg.host, cfg.port) }
                 storage.updatePing(cfg.id, ms)
             }
         }
+    }
+
+    private fun tcpPing(host: String, port: Int): Long {
+        return try {
+            val sock = Socket()
+            val t = System.currentTimeMillis()
+            sock.connect(InetSocketAddress(host, port), 3000)
+            val elapsed = System.currentTimeMillis() - t
+            try { sock.close() } catch (_: Exception) {}
+            elapsed
+        } catch (e: Exception) { -1L }
     }
 
     fun parseLink(raw: String): ProxyConfig? {
@@ -103,7 +97,9 @@ class ProxyViewModel @Inject constructor(
             val trimmed = raw.trim()
             val uri = Uri.parse(trimmed)
             when {
-                uri.scheme == "tg" -> {
+                // tg://proxy?server=... OR https://t.me/proxy?server=...
+                (uri.scheme == "tg" && uri.host == "proxy") ||
+                (uri.scheme == "https" && uri.host == "t.me" && uri.pathSegments.firstOrNull() == "proxy") -> {
                     val server = uri.getQueryParameter("server") ?: return null
                     val port   = uri.getQueryParameter("port")?.toIntOrNull() ?: 443
                     val secret = uri.getQueryParameter("secret") ?: ""
