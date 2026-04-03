@@ -24,7 +24,9 @@ data class VKUser(
     @SerializedName("deactivated") val deactivated: String? = null,
     @SerializedName("last_seen") val lastSeen: VKLastSeen? = null,
     @SerializedName("followers_count") val followersCount: Int = 0,
-    @SerializedName("counters") val counters: VKCounters? = null
+    @SerializedName("counters") val counters: VKCounters? = null,
+    @SerializedName("verified") val verified: Int = 0,
+    @SerializedName("verification_info") val verificationInfo: VKVerificationInfo? = null
 ) {
     val fullName get() = "$firstName $lastName"
     val isOnline get() = online == 1
@@ -41,6 +43,17 @@ data class VKCounters(
     @SerializedName("followers") val followers: Int = 0,
     @SerializedName("photos") val photos: Int = 0,
     @SerializedName("videos") val videos: Int = 0
+)
+
+data class VKVerification(
+    @SerializedName("type")     val type: String = "",
+    @SerializedName("priority") val priority: Int = 0,
+    @SerializedName("name")     val name: String = ""
+)
+
+data class VKVerificationInfo(
+    @SerializedName("header")        val header: String = "",
+    @SerializedName("verifications") val verifications: List<VKVerification> = emptyList()
 )
 
 data class VKCity(

@@ -39,6 +39,7 @@ class SettingsStore @Inject constructor(
         val KEY_BYPASS_SHORT_URL   = booleanPreferencesKey("bypass_short_url")
         val KEY_LONGPOLL_ONLY      = booleanPreferencesKey("longpoll_only")
         val KEY_HARDWARE_SPOOF     = booleanPreferencesKey("hardware_spoof")
+        val KEY_VERIFY_CHECKER     = booleanPreferencesKey("verify_checker")
     }
 
     val unRead:       Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_UNREAD]        ?: false }
@@ -60,6 +61,7 @@ class SettingsStore @Inject constructor(
     val bypassShortUrl:    Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_BYPASS_SHORT_URL]   ?: false }
     val longPollOnly:      Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_LONGPOLL_ONLY]      ?: false }
     val hardwareSpoof:     Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_HARDWARE_SPOOF]     ?: false }
+    val verifyChecker:     Flow<Boolean> = context.settingsDataStore.data.map { it[KEY_VERIFY_CHECKER]     ?: true }
 
     suspend fun setUnRead(v: Boolean)        = context.settingsDataStore.edit { it[KEY_UNREAD]        = v }
     suspend fun setUnType(v: Boolean)        = context.settingsDataStore.edit { it[KEY_UNTYPE]        = v }

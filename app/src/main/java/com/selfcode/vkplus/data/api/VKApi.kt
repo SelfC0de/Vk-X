@@ -9,7 +9,7 @@ interface VKApi {
     @GET("users.get")
     suspend fun getUsers(
         @Query("user_ids") userIds: String? = null,
-        @Query("fields") fields: String = "photo_200,photo_100,online,last_seen,status,city,followers_count,counters",
+        @Query("fields") fields: String = "photo_200,photo_100,online,last_seen,status,city,followers_count,counters,verified,verification_info",
         @Query("access_token") token: String,
         @Query("v") version: String = "5.199"
     ): VKResponse<List<VKUser>>
@@ -152,7 +152,7 @@ interface VKApi {
     @GET("users.get")
     suspend fun getUserExtended(
         @Query("user_ids") userIds: String,
-        @Query("fields") fields: String = "photo_200,photo_100,online,last_seen,status,city,bdate,followers_count,counters,occupation,relation,screen_name",
+        @Query("fields") fields: String = "photo_200,photo_100,online,last_seen,status,city,bdate,followers_count,counters,occupation,relation,screen_name,verified,verification_info",
         @Query("access_token") token: String,
         @Query("v") version: String = "5.199"
     ): VKResponse<List<VKUserExtended>>
@@ -582,7 +582,9 @@ data class VKUserExtended(
     @com.google.gson.annotations.SerializedName("relation") val relation: Int = 0,
     @com.google.gson.annotations.SerializedName("deactivated") val deactivated: String? = null,
     @com.google.gson.annotations.SerializedName("screen_name") val screenName: String? = null,
-    @com.google.gson.annotations.SerializedName("last_seen") val lastSeen: com.selfcode.vkplus.data.model.VKLastSeen? = null
+    @com.google.gson.annotations.SerializedName("last_seen") val lastSeen: com.selfcode.vkplus.data.model.VKLastSeen? = null,
+    @com.google.gson.annotations.SerializedName("verified") val verified: Int = 0,
+    @com.google.gson.annotations.SerializedName("verification_info") val verificationInfo: com.selfcode.vkplus.data.model.VKVerificationInfo? = null
 ) {
     val fullName get() = "$firstName $lastName".trim()
     val isOnline get() = online == 1

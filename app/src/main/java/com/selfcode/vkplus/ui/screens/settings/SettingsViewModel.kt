@@ -34,7 +34,8 @@ data class SettingsUiState(
     val bypassShortUrl: Boolean   = false,
     val longPollOnly: Boolean     = false,
     val hardwareSpoof: Boolean    = false,
-    val deviceUa: String       = DeviceProfile.KATE.ua
+    val deviceUa: String       = DeviceProfile.KATE.ua,
+    val verifyChecker: Boolean = true
 )
 
 @HiltViewModel
@@ -61,7 +62,8 @@ class SettingsViewModel @Inject constructor(
         settingsStore.bypassShortUrl,
         settingsStore.longPollOnly,
         settingsStore.hardwareSpoof,
-        settingsStore.deviceUa
+        settingsStore.deviceUa,
+        settingsStore.verifyChecker
     ) { arr ->
         SettingsUiState(
             unRead         = arr[0] as Boolean,
@@ -81,7 +83,8 @@ class SettingsViewModel @Inject constructor(
             bypassShortUrl = arr[14] as Boolean,
             longPollOnly   = arr[15] as Boolean,
             hardwareSpoof  = arr[16] as Boolean,
-            deviceUa       = arr[17] as String
+            deviceUa       = arr[17] as String,
+            verifyChecker  = arr[18] as Boolean
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
 
@@ -101,6 +104,7 @@ class SettingsViewModel @Inject constructor(
     fun setBypassShortUrl(v: Boolean)     = viewModelScope.launch { settingsStore.setBypassShortUrl(v) }
     fun setLongPollOnly(v: Boolean)       = viewModelScope.launch { settingsStore.setLongPollOnly(v) }
     fun setHardwareSpoof(v: Boolean)      = viewModelScope.launch { settingsStore.setHardwareSpoof(v) }
+    fun setVerifyChecker(v: Boolean)      = viewModelScope.launch { settingsStore.setVerifyChecker(v) }
 
     fun setForceOffline(v: Boolean) = viewModelScope.launch {
         settingsStore.setForceOffline(v)

@@ -120,6 +120,35 @@ private fun EngineTab(state: SettingsUiState, vm: SettingsViewModel) {
                 "Публиковать/отправлять без триггера account.setOnline", state.offlinePost, vm::setOfflinePost)
         }
 
+        SettingsSection("✅ Верификация") {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Filled.VerifiedUser,
+                    contentDescription = null,
+                    tint = CyberBlue,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text("Verify Checker", color = OnSurface, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f))
+            }
+            Text(
+                "Показывает значки верификации рядом с именем: Госуслуги, Сбер, Альфа и другие сервисы.",
+                color = OnSurfaceMuted, fontSize = 11.sp, lineHeight = 15.sp,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            SettingsToggle(
+                icon = Icons.Filled.Shield,
+                title = "Verify Checker",
+                subtitle = "Отображать значки подтверждения личности рядом с именем пользователя",
+                checked = state.verifyChecker,
+                onCheckedChange = { vm.setVerifyChecker(it) }
+            )
+        }
+
         SettingsSection("🕵️ Activity Bypass") {
             SettingsToggle(Icons.Filled.Visibility, "Bypass Activity Status",
                 "Загружать сообщения через execute — не триггерит Online", state.bypassActivity, vm::setBypassActivity)

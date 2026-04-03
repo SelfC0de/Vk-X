@@ -33,6 +33,9 @@ import com.selfcode.vkplus.data.api.VKUserExtended
 import com.selfcode.vkplus.data.repository.VKRepository
 import com.selfcode.vkplus.data.repository.VKResult
 import com.selfcode.vkplus.ui.theme.*
+import com.selfcode.vkplus.ui.components.VerificationBadgesInline
+import com.selfcode.vkplus.ui.components.VerificationRow
+import com.selfcode.vkplus.ui.screens.settings.SettingsViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -106,9 +109,11 @@ fun UserProfileScreen(
     userId: String,
     onBack: () -> Unit,
     onWriteMessage: (Int) -> Unit,
-    viewModel: UserProfileViewModel = hiltViewModel()
+    viewModel: UserProfileViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val user by viewModel.user.collectAsState()
+    val settingsState by settingsViewModel.uiState.collectAsState()
     val loading by viewModel.loading.collectAsState()
     val error by viewModel.error.collectAsState()
     val lastActivity by viewModel.lastActivity.collectAsState()
@@ -155,10 +160,12 @@ fun UserProfileScreen(
                     Spacer(Modifier.height(50.dp))
 
                     Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(u.fullName, color = OnSurface, fontSize = 21.sp, fontWeight = FontWeight.Bold)
+                            if (settingsState.verifyChecker) {
+                                VerificationBadgesInline(u.verified, u.verificationInfo)
+                            }
                             if (u.isOnline) {
-                                Spacer(Modifier.width(8.dp))
                                 Box(modifier = Modifier.background(CyberBlue.copy(alpha = 0.15f), RoundedCornerShape(6.dp)).padding(horizontal = 6.dp, vertical = 2.dp)) {
                                     Text("онлайн", color = CyberBlue, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                                 }
@@ -175,6 +182,11 @@ fun UserProfileScreen(
                         if (!u.status.isNullOrBlank()) {
                             Spacer(Modifier.height(3.dp))
                             Text(u.status, color = OnSurfaceMuted, fontSize = 13.sp, lineHeight = 17.sp)
+                        }
+
+                        if (settingsState.verifyChecker) {
+                            Spacer(Modifier.height(6.dp))
+                            VerificationRow(u.verified, u.verificationInfo)
                         }
 
                         Spacer(Modifier.height(14.dp))

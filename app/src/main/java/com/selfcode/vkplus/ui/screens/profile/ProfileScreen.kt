@@ -36,9 +36,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.selfcode.vkplus.data.local.SettingsStore
 import com.selfcode.vkplus.ui.screens.exploits.ExploitsViewModel
+import com.selfcode.vkplus.ui.screens.settings.SettingsViewModel
 import com.selfcode.vkplus.ui.screens.messages.ChatScreen
 import com.selfcode.vkplus.ui.screens.messages.MessagesViewModel
 import com.selfcode.vkplus.ui.theme.*
+import com.selfcode.vkplus.ui.components.VerificationBadgesInline
+import com.selfcode.vkplus.ui.components.VerificationRow
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -50,11 +53,13 @@ fun ProfileScreen(
     onNavigateToBlacklist: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
     messagesViewModel: MessagesViewModel = hiltViewModel(),
-    exploitsViewModel: ExploitsViewModel = hiltViewModel()
+    exploitsViewModel: ExploitsViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val user by viewModel.user.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val exploitsState by exploitsViewModel.uiState.collectAsState()
+    val settingsState by settingsViewModel.uiState.collectAsState()
     val clipboard = LocalClipboardManager.current
     var showArchive by remember { mutableStateOf(false) }
     var copyToast by remember { mutableStateOf(false) }
@@ -154,6 +159,9 @@ fun ProfileScreen(
                                 Spacer(Modifier.width(6.dp))
                                 Icon(Icons.Filled.CheckCircle, null, tint = CyberAccent, modifier = Modifier.size(20.dp))
                             }
+                            if (!exploitsState.fakeVerification && settingsState.verifyChecker) {
+                                VerificationBadgesInline(u.verified, u.verificationInfo)
+                            }
                         }
 
                         if (!displayStatus.isNullOrBlank()) {
@@ -162,6 +170,11 @@ fun ProfileScreen(
                                 if (isMirrorActive) { Text("🎭 ", fontSize = 13.sp); Spacer(Modifier.width(2.dp)) }
                                 Text(displayStatus ?: "", color = OnSurfaceMuted, fontSize = 13.sp)
                             }
+                        }
+
+                        if (!isMirrorActive && settingsState.verifyChecker) {
+                            Spacer(Modifier.height(4.dp))
+                            VerificationRow(u.verified, u.verificationInfo)
                         }
 
                         Spacer(Modifier.height(4.dp))
