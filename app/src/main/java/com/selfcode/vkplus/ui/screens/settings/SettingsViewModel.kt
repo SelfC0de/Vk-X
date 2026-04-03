@@ -107,6 +107,8 @@ class SettingsViewModel @Inject constructor(
     fun setBypassShortUrl(v: Boolean)     = viewModelScope.launch { settingsStore.setBypassShortUrl(v) }
     fun setLongPollOnly(v: Boolean)       = viewModelScope.launch { settingsStore.setLongPollOnly(v) }
     fun setHardwareSpoof(v: Boolean)      = viewModelScope.launch { settingsStore.setHardwareSpoof(v) }
+    fun setSniSpoof(v: Boolean)           = viewModelScope.launch { settingsStore.setSniSpoof(v) }
+    fun setUaSwitcher(v: Boolean)         = viewModelScope.launch { settingsStore.setUaSwitcher(v) }
 
     fun setForceOffline(v: Boolean) = viewModelScope.launch {
         settingsStore.setForceOffline(v)
