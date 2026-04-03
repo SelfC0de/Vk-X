@@ -24,7 +24,7 @@ class ProxyManager @Inject constructor(
             .addInterceptor(privacyInterceptor)
             .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.NONE })
 
-        if (cfg != null && cfg.enabled && cfg.host.isNotBlank()) {
+        if (cfg != null && cfg.host.isNotBlank()) {
             val proxyType = if (cfg.type == "HTTP") Proxy.Type.HTTP else Proxy.Type.SOCKS
             val proxy = Proxy(proxyType, InetSocketAddress(cfg.host, cfg.port))
             builder.proxy(proxy)

@@ -316,11 +316,26 @@ private fun TokenTab(onManualToken: (String) -> Unit, showInvalidError: Boolean)
                     ),
                 visualTransformation = if (tokenVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
-                    IconButton(onClick = { tokenVisible = !tokenVisible }) {
-                        Icon(
-                            if (tokenVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                            contentDescription = null, tint = OnSurfaceMuted
-                        )
+                    val clipboardManager = LocalClipboardManager.current
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (token.isNotBlank()) {
+                            IconButton(onClick = { token = ""; error = null }) {
+                                Icon(Icons.Filled.Clear, null, tint = OnSurfaceMuted, modifier = Modifier.size(18.dp))
+                            }
+                        } else {
+                            IconButton(onClick = {
+                                val txt = clipboardManager.getText()?.text?.trim() ?: ""
+                                if (txt.isNotBlank()) { token = txt; error = null }
+                            }) {
+                                Icon(Icons.Filled.ContentPaste, null, tint = CyberBlue, modifier = Modifier.size(18.dp))
+                            }
+                        }
+                        IconButton(onClick = { tokenVisible = !tokenVisible }) {
+                            Icon(
+                                if (tokenVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                null, tint = OnSurfaceMuted, modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),

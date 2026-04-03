@@ -9,6 +9,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -34,9 +35,13 @@ import com.selfcode.vkplus.data.local.ProxyConfig
 import com.selfcode.vkplus.data.local.ProxyStorage
 import com.selfcode.vkplus.ui.theme.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.net.InetSocketAddress
+import java.net.Socket
 import javax.inject.Inject
 
 @HiltViewModel
@@ -44,58 +49,85 @@ class ProxyViewModel @Inject constructor(
     private val storage: ProxyStorage
 ) : ViewModel() {
 
-    val config = storage.config.stateIn(viewModelScope, SharingStarted.Eagerly, ProxyConfig())
+    val list     = storage.list.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val activeId = storage.activeId.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
-    fun save(cfg: ProxyConfig) {
-        viewModelScope.launch { storage.save(cfg) }
+    fun add(cfg: ProxyConfig) = viewModelScope.launch { storage.addProxy(cfg) }
+    fun remove(id: String)    = viewModelScope.launch { storage.removeProxy(id) }
+    fun setActive(id: String) = viewModelScope.launch {
+        storage.setActive(if (activeId.value == id) "" else id)
     }
 
-    fun toggle(enabled: Boolean) {
-        viewModelScope.launch { storage.setEnabled(enabled) }
+    fun ping(cfg: ProxyConfig) = viewModelScope.launch {
+        val ms = withContext(Dispatchers.IO) {
+            try {
+                val t = System.currentTimeMillis()
+                Socket().use { s ->
+                    s.connect(InetSocketAddress(cfg.host, cfg.port), 3000)
+                }
+                System.currentTimeMillis() - t
+            } catch (e: Exception) { -1L }
+        }
+        storage.updatePing(cfg.id, ms)
     }
 
-    // Parse tg://proxy?server=...&port=...&secret=... OR vkplus://proxy?host=...&port=...&type=...
+    fun pingLatest() = viewModelScope.launch {
+        val last = list.value.lastOrNull() ?: return@launch
+        val ms = withContext(Dispatchers.IO) {
+            try {
+                val t = System.currentTimeMillis()
+                Socket().use { s -> s.connect(InetSocketAddress(last.host, last.port), 3000) }
+                System.currentTimeMillis() - t
+            } catch (e: Exception) { -1L }
+        }
+        storage.updatePing(last.id, ms)
+    }
+
+    fun pingAll() = viewModelScope.launch {
+        list.value.forEach { cfg ->
+            launch {
+                val ms = withContext(Dispatchers.IO) {
+                    try {
+                        val t = System.currentTimeMillis()
+                        Socket().use { s -> s.connect(InetSocketAddress(cfg.host, cfg.port), 3000) }
+                        System.currentTimeMillis() - t
+                    } catch (e: Exception) { -1L }
+                }
+                storage.updatePing(cfg.id, ms)
+            }
+        }
+    }
+
     fun parseLink(raw: String): ProxyConfig? {
         return try {
             val trimmed = raw.trim()
             val uri = Uri.parse(trimmed)
             when {
-                // tg://proxy?server=...&port=...&secret=...
-                (uri.scheme == "tg" || uri.scheme == "https") && uri.host == "t.me" || uri.scheme == "tg" -> {
+                uri.scheme == "tg" -> {
                     val server = uri.getQueryParameter("server") ?: return null
-                    val port = uri.getQueryParameter("port")?.toIntOrNull() ?: 443
+                    val port   = uri.getQueryParameter("port")?.toIntOrNull() ?: 443
                     val secret = uri.getQueryParameter("secret") ?: ""
-                    // Decode MTProto secret: strip leading 'ee' (FakeTLS prefix) to get real secret
-                    val cleanSecret = if (secret.startsWith("ee")) secret.substring(2) else secret
-                    ProxyConfig(
-                        enabled = true,
-                        host = server,
-                        port = port,
-                        type = "SOCKS5",
-                        secret = cleanSecret
-                    )
+                    val clean  = if (secret.startsWith("ee")) secret.substring(2) else secret
+                    ProxyConfig(host = server, port = port, type = "SOCKS5", secret = clean)
                 }
-                // vkplus://proxy?host=...&port=...&type=...&user=...&pass=...
                 uri.scheme == "vkplus" && uri.host == "proxy" -> {
-                    val host = uri.getQueryParameter("host") ?: return null
-                    val port = uri.getQueryParameter("port")?.toIntOrNull() ?: 1080
-                    val type = uri.getQueryParameter("type")?.uppercase() ?: "SOCKS5"
-                    val user = uri.getQueryParameter("user") ?: ""
-                    val pass = uri.getQueryParameter("pass") ?: ""
+                    val host   = uri.getQueryParameter("host") ?: return null
+                    val port   = uri.getQueryParameter("port")?.toIntOrNull() ?: 1080
+                    val type   = uri.getQueryParameter("type")?.uppercase() ?: "SOCKS5"
+                    val user   = uri.getQueryParameter("user") ?: ""
+                    val pass   = uri.getQueryParameter("pass") ?: ""
                     val secret = uri.getQueryParameter("secret") ?: ""
-                    ProxyConfig(enabled = true, host = host, port = port, type = type, user = user, pass = pass, secret = secret)
+                    ProxyConfig(host = host, port = port, type = type, user = user, pass = pass, secret = secret)
                 }
-                // Plain host:port
                 trimmed.contains(":") && !trimmed.contains("://") -> {
                     val parts = trimmed.split(":")
-                    ProxyConfig(enabled = true, host = parts[0], port = parts.getOrNull(1)?.toIntOrNull() ?: 1080)
+                    ProxyConfig(host = parts[0], port = parts.getOrNull(1)?.toIntOrNull() ?: 1080)
                 }
                 else -> null
             }
         } catch (e: Exception) { null }
     }
 
-    // Build vkplus:// deep link from current config
     fun buildDeepLink(cfg: ProxyConfig): String {
         val sb = StringBuilder("vkplus://proxy?host=${cfg.host}&port=${cfg.port}&type=${cfg.type}")
         if (cfg.user.isNotBlank()) sb.append("&user=${cfg.user}&pass=${cfg.pass}")
@@ -106,238 +138,394 @@ class ProxyViewModel @Inject constructor(
 
 @Composable
 fun ProxyScreen(viewModel: ProxyViewModel = hiltViewModel()) {
-    val config by viewModel.config.collectAsState()
-    val context = LocalContext.current
+    val list     by viewModel.list.collectAsState()
+    val activeId by viewModel.activeId.collectAsState()
+    val context  = LocalContext.current
 
-    var host by remember(config.host) { mutableStateOf(config.host) }
-    var port by remember(config.port) { mutableStateOf(config.port.toString()) }
-    var type by remember(config.type) { mutableStateOf(config.type) }
-    var user by remember(config.user) { mutableStateOf(config.user) }
-    var pass by remember(config.pass) { mutableStateOf(config.pass) }
-    var secret by remember(config.secret) { mutableStateOf(config.secret) }
-    var linkInput by remember { mutableStateOf("") }
-    var showPass by remember { mutableStateOf(false) }
-    var parseError by remember { mutableStateOf<String?>(null) }
-    var showDeepLink by remember { mutableStateOf(false) }
+    var showAdd by remember { mutableStateOf(false) }
 
-    val isConfigured = host.isNotBlank() && port.isNotBlank()
+    Column(modifier = Modifier.fillMaxSize().background(Background)) {
 
-    Column(
-        modifier = Modifier.fillMaxSize().background(Background)
-            .verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        // Status card
+        // Toolbar
         Row(
-            modifier = Modifier.fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(if (config.enabled) CyberBlue.copy(0.12f) else SurfaceVariant)
-                .border(1.dp, if (config.enabled) CyberBlue.copy(0.4f) else Divider, RoundedCornerShape(14.dp))
-                .padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                if (config.enabled) Icons.Filled.VpnKey else Icons.Filled.VpnKeyOff,
-                null, tint = if (config.enabled) CyberBlue else OnSurfaceMuted,
-                modifier = Modifier.size(28.dp)
-            )
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(
-                    if (config.enabled) "Прокси активен" else "Прокси отключён",
-                    color = if (config.enabled) CyberBlue else OnSurface,
-                    fontSize = 15.sp, fontWeight = FontWeight.Bold
-                )
-                if (config.enabled && config.host.isNotBlank()) {
-                    Text("${config.host}:${config.port} · ${config.type}",
-                        color = OnSurfaceMuted, fontSize = 12.sp)
+            Text("Прокси", color = OnSurface, fontSize = 18.sp, fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f))
+            if (list.isNotEmpty()) {
+                IconButton(onClick = { viewModel.pingAll() }) {
+                    Icon(Icons.Filled.NetworkCheck, null, tint = CyberBlue, modifier = Modifier.size(22.dp))
                 }
             }
-            Switch(
-                checked = config.enabled,
-                onCheckedChange = { if (isConfigured) viewModel.toggle(it) },
-                enabled = isConfigured,
-                colors = SwitchDefaults.colors(checkedThumbColor = Background, checkedTrackColor = CyberBlue)
-            )
+            IconButton(onClick = { showAdd = true }) {
+                Icon(Icons.Filled.Add, null, tint = CyberBlue, modifier = Modifier.size(24.dp))
+            }
         }
 
-        // Import link section
-        SectionCard(title = "Импорт ссылки") {
-            Text("Поддерживаются: tg://proxy?..., vkplus://proxy?..., host:port",
-                color = OnSurfaceMuted, fontSize = 11.sp)
-            Spacer(Modifier.height(8.dp))
-            OutlinedTextField(
-                value = linkInput,
-                onValueChange = { linkInput = it; parseError = null },
-                placeholder = { Text("tg://proxy?server=...&port=...&secret=...", color = OnSurfaceMuted, fontSize = 12.sp) },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 2,
-                maxLines = 3,
-                trailingIcon = {
-                    Row {
-                        // Paste from clipboard
-                        IconButton(onClick = {
-                            val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            val txt = cm.primaryClip?.getItemAt(0)?.text?.toString()?.trim() ?: ""
-                            if (txt.isNotBlank()) { linkInput = txt; parseError = null }
-                        }) { Icon(Icons.Filled.ContentPaste, null, tint = CyberBlue, modifier = Modifier.size(18.dp)) }
-                        if (linkInput.isNotBlank()) {
-                            IconButton(onClick = { linkInput = ""; parseError = null }) {
-                                Icon(Icons.Filled.Clear, null, tint = OnSurfaceMuted, modifier = Modifier.size(18.dp))
-                            }
-                        }
-                    }
-                },
-                colors = proxyFieldColors()
-            )
-            if (parseError != null) {
-                Text(parseError!!, color = ErrorRed, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+        if (list.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Filled.VpnKeyOff, null, tint = OnSurfaceMuted, modifier = Modifier.size(48.dp))
+                    Text("Нет прокси", color = OnSurfaceMuted, fontSize = 14.sp)
+                    Text("Нажмите + чтобы добавить", color = OnSurfaceMuted, fontSize = 12.sp)
+                }
             }
-            Spacer(Modifier.height(8.dp))
-            Button(
-                onClick = {
-                    val parsed = viewModel.parseLink(linkInput)
-                    if (parsed != null) {
-                        host = parsed.host; port = parsed.port.toString()
-                        type = parsed.type; user = parsed.user; pass = parsed.pass; secret = parsed.secret
-                        viewModel.save(parsed)
-                        linkInput = ""
-                        parseError = null
-                    } else {
-                        parseError = "Не удалось распознать ссылку"
-                    }
-                },
-                enabled = linkInput.isNotBlank(),
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = CyberBlue)
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(Icons.Filled.Download, null, tint = Background, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("Импортировать", color = Background, fontWeight = FontWeight.SemiBold)
-            }
-        }
-
-        // Manual config
-        SectionCard(title = "Настройки вручную") {
-            // Type selector
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("SOCKS5", "HTTP").forEach { t ->
-                    FilterChip(
-                        selected = type == t,
-                        onClick = { type = t },
-                        label = { Text(t, fontSize = 13.sp) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = CyberBlue,
-                            selectedLabelColor = Background,
-                            containerColor = SurfaceVariant,
-                            labelColor = OnSurfaceMuted
-                        )
+                list.forEach { cfg ->
+                    ProxyItem(
+                        cfg = cfg,
+                        isActive = cfg.id == activeId,
+                        onActivate = { viewModel.setActive(cfg.id) },
+                        onPing = { viewModel.ping(cfg) },
+                        onDelete = { viewModel.remove(cfg.id) },
+                        onCopyLink = {
+                            val link = viewModel.buildDeepLink(cfg)
+                            val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            cm.setPrimaryClip(android.content.ClipData.newPlainText("proxy", link))
+                        }
                     )
                 }
-            }
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ProxyField("Хост / IP", host, Modifier.weight(1f)) { host = it }
-                ProxyField("Порт", port, Modifier.width(90.dp), KeyboardType.Number) { port = it }
-            }
-            Spacer(Modifier.height(4.dp))
-            ProxyField("Пользователь (необязательно)", user) { user = it }
-            Spacer(Modifier.height(4.dp))
-            // Password with show/hide
-            OutlinedTextField(
-                value = pass,
-                onValueChange = { pass = it },
-                label = { Text("Пароль (необязательно)", fontSize = 12.sp) },
-                modifier = Modifier.fillMaxWidth(),
-                visualTransformation = if (showPass) VisualTransformation.None else PasswordVisualTransformation(),
-                trailingIcon = {
-                    IconButton(onClick = { showPass = !showPass }) {
-                        Icon(if (showPass) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                            null, tint = OnSurfaceMuted, modifier = Modifier.size(18.dp))
-                    }
-                },
-                colors = proxyFieldColors()
-            )
-            // Secret (MTProto)
-            if (secret.isNotBlank() || type == "SOCKS5") {
-                Spacer(Modifier.height(4.dp))
-                ProxyField("Secret / MTProto (необязательно)", secret) { secret = it }
-                if (secret.isNotBlank()) {
-                    Text("FakeTLS домен: ${decodeMTSecret(secret)}",
-                        color = OnSurfaceMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
-                }
-            }
-            Spacer(Modifier.height(10.dp))
-            Button(
-                onClick = {
-                    viewModel.save(ProxyConfig(
-                        enabled = config.enabled,
-                        host = host, port = port.toIntOrNull() ?: 1080,
-                        type = type, user = user, pass = pass, secret = secret
-                    ))
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = CyberBlue)
-            ) { Text("Сохранить", color = Background, fontWeight = FontWeight.SemiBold) }
-        }
-
-        // Deep link generator
-        if (isConfigured) {
-            SectionCard(title = "Deep Link") {
-                val deepLink = viewModel.buildDeepLink(ProxyConfig(
-                    enabled = config.enabled, host = host,
-                    port = port.toIntOrNull() ?: 1080,
-                    type = type, user = user, pass = pass, secret = secret
-                ))
-                Text(deepLink, color = CyberBlue, fontSize = 12.sp,
-                    modifier = Modifier.fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(SurfaceVariant)
-                        .padding(10.dp))
                 Spacer(Modifier.height(8.dp))
-                OutlinedButton(
-                    onClick = {
-                        val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        cm.setPrimaryClip(android.content.ClipData.newPlainText("proxy", deepLink))
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    border = ButtonDefaults.outlinedButtonBorder.copy(
-                        brush = androidx.compose.ui.graphics.SolidColor(CyberBlue)
-                    )
-                ) {
-                    Icon(Icons.Filled.ContentCopy, null, tint = CyberBlue, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Скопировать ссылку", color = CyberBlue)
-                }
             }
         }
+    }
+
+    if (showAdd) {
+        AddProxyDialog(
+            onDismiss = { showAdd = false },
+            onAdd = { cfg ->
+                viewModel.add(cfg)
+                showAdd = false
+                viewModel.pingLatest()
+            },
+            parseLink = viewModel::parseLink
+        )
     }
 }
 
 @Composable
-private fun SectionCard(title: String, content: @Composable ColumnScope.() -> Unit) {
+private fun ProxyItem(
+    cfg: ProxyConfig,
+    isActive: Boolean,
+    onActivate: () -> Unit,
+    onPing: () -> Unit,
+    onDelete: () -> Unit,
+    onCopyLink: () -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier.fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(Surface)
-            .border(0.5.dp, Divider, RoundedCornerShape(14.dp))
-            .padding(14.dp)
+            .background(if (isActive) CyberBlue.copy(0.10f) else Surface)
+            .border(
+                1.dp,
+                if (isActive) CyberBlue.copy(0.5f) else Divider,
+                RoundedCornerShape(14.dp)
+            )
     ) {
-        Text(title, color = OnSurfaceMuted, fontSize = 11.sp, letterSpacing = 0.5.sp,
-            fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 10.dp))
-        content()
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Active indicator dot
+            Box(
+                modifier = Modifier.size(10.dp).clip(CircleShape)
+                    .background(
+                        when {
+                            isActive && cfg.pingMs > 0 -> pingColor(cfg.pingMs)
+                            isActive -> CyberBlue
+                            else -> OnSurfaceMuted.copy(0.3f)
+                        }
+                    )
+            )
+            Spacer(Modifier.width(10.dp))
+
+            // Info
+            Column(Modifier.weight(1f)) {
+                Text("${cfg.host}:${cfg.port}", color = OnSurface, fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold)
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    TypeBadge(cfg.type)
+                    if (cfg.pingMs > 0) {
+                        Text("${cfg.pingMs} ms", color = pingColor(cfg.pingMs), fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium)
+                    } else if (cfg.pingMs == -1L && cfg.host.isNotBlank()) {
+                        Text("—", color = OnSurfaceMuted, fontSize = 12.sp)
+                    }
+                }
+            }
+
+            // Ping button
+            IconButton(onClick = onPing, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Filled.Speed, null, tint = OnSurfaceMuted, modifier = Modifier.size(18.dp))
+            }
+
+            // Expand
+            IconButton(onClick = { expanded = !expanded }, modifier = Modifier.size(32.dp)) {
+                Icon(
+                    if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                    null, tint = OnSurfaceMuted, modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+
+        // Expanded actions
+        AnimatedVisibility(visible = expanded) {
+            Row(
+                modifier = Modifier.fillMaxWidth()
+                    .background(SurfaceVariant)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Activate/Deactivate
+                OutlinedButton(
+                    onClick = onActivate,
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                    border = ButtonDefaults.outlinedButtonBorder.copy(
+                        brush = androidx.compose.ui.graphics.SolidColor(
+                            if (isActive) OnSurfaceMuted else CyberBlue
+                        )
+                    )
+                ) {
+                    Icon(
+                        if (isActive) Icons.Filled.VpnKeyOff else Icons.Filled.VpnKey,
+                        null,
+                        tint = if (isActive) OnSurfaceMuted else CyberBlue,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        if (isActive) "Отключить" else "Активировать",
+                        color = if (isActive) OnSurfaceMuted else CyberBlue,
+                        fontSize = 12.sp
+                    )
+                }
+
+                // Copy link
+                IconButton(
+                    onClick = onCopyLink,
+                    modifier = Modifier.size(36.dp).clip(RoundedCornerShape(8.dp))
+                        .background(SurfaceVariant)
+                        .border(1.dp, Divider, RoundedCornerShape(8.dp))
+                ) {
+                    Icon(Icons.Filled.ContentCopy, null, tint = OnSurfaceMuted, modifier = Modifier.size(16.dp))
+                }
+
+                // Delete
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier.size(36.dp).clip(RoundedCornerShape(8.dp))
+                        .background(ErrorRed.copy(0.08f))
+                        .border(1.dp, ErrorRed.copy(0.3f), RoundedCornerShape(8.dp))
+                ) {
+                    Icon(Icons.Filled.Delete, null, tint = ErrorRed, modifier = Modifier.size(16.dp))
+                }
+            }
+        }
     }
 }
 
 @Composable
-private fun ProxyField(label: String, value: String, modifier: Modifier = Modifier,
-                       keyboard: KeyboardType = KeyboardType.Text, onChange: (String) -> Unit) {
+private fun TypeBadge(type: String) {
+    Text(
+        type,
+        color = CyberAccent,
+        fontSize = 10.sp,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier
+            .clip(RoundedCornerShape(4.dp))
+            .background(CyberAccent.copy(0.12f))
+            .padding(horizontal = 5.dp, vertical = 1.dp)
+    )
+}
+
+private fun pingColor(ms: Long): Color = when {
+    ms < 150  -> Color(0xFF4CAF50)
+    ms < 400  -> Color(0xFFFFAB40)
+    else      -> Color(0xFFF44336)
+}
+
+@Composable
+private fun AddProxyDialog(
+    onDismiss: () -> Unit,
+    onAdd: (ProxyConfig) -> Unit,
+    parseLink: (String) -> ProxyConfig?
+) {
+    var linkInput  by remember { mutableStateOf("") }
+    var host       by remember { mutableStateOf("") }
+    var port       by remember { mutableStateOf("") }
+    var type       by remember { mutableStateOf("SOCKS5") }
+    var user       by remember { mutableStateOf("") }
+    var pass       by remember { mutableStateOf("") }
+    var secret     by remember { mutableStateOf("") }
+    var showPass   by remember { mutableStateOf(false) }
+    var parseError by remember { mutableStateOf<String?>(null) }
+    var tab        by remember { mutableStateOf(0) } // 0=ссылка, 1=ручной
+    val context    = LocalContext.current
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Surface,
+        title = { Text("Добавить прокси", color = OnSurface, fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+
+                // Tab switcher
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(SurfaceVariant),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    listOf("По ссылке", "Вручную").forEachIndexed { i, label ->
+                        Box(
+                            modifier = Modifier.weight(1f)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (tab == i) CyberBlue else Color.Transparent)
+                                .clickable { tab = i }
+                                .padding(vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(label,
+                                color = if (tab == i) Background else OnSurfaceMuted,
+                                fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        }
+                    }
+                }
+
+                if (tab == 0) {
+                    // Import via link
+                    Text("tg://proxy?... · vkplus://proxy?... · host:port",
+                        color = OnSurfaceMuted, fontSize = 11.sp)
+                    OutlinedTextField(
+                        value = linkInput,
+                        onValueChange = { linkInput = it; parseError = null },
+                        placeholder = { Text("Вставьте ссылку", color = OnSurfaceMuted, fontSize = 12.sp) },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 2,
+                        maxLines = 4,
+                        trailingIcon = {
+                            Row {
+                                IconButton(onClick = {
+                                    val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    val txt = cm.primaryClip?.getItemAt(0)?.text?.toString()?.trim() ?: ""
+                                    if (txt.isNotBlank()) { linkInput = txt; parseError = null }
+                                }) {
+                                    Icon(Icons.Filled.ContentPaste, null, tint = CyberBlue, modifier = Modifier.size(18.dp))
+                                }
+                                if (linkInput.isNotBlank()) {
+                                    IconButton(onClick = { linkInput = ""; parseError = null }) {
+                                        Icon(Icons.Filled.Clear, null, tint = OnSurfaceMuted, modifier = Modifier.size(18.dp))
+                                    }
+                                }
+                            }
+                        },
+                        colors = proxyFieldColors()
+                    )
+                    if (parseError != null) {
+                        Text(parseError!!, color = ErrorRed, fontSize = 12.sp)
+                    }
+                    // Preview parsed
+                    if (linkInput.isNotBlank()) {
+                        val preview = parseLink(linkInput)
+                        if (preview != null) {
+                            Text("✓ ${preview.host}:${preview.port} · ${preview.type}",
+                                color = Color(0xFF4CAF50), fontSize = 12.sp)
+                        }
+                    }
+                } else {
+                    // Manual
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("SOCKS5", "HTTP").forEach { t ->
+                            FilterChip(
+                                selected = type == t,
+                                onClick = { type = t },
+                                label = { Text(t, fontSize = 12.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = CyberBlue,
+                                    selectedLabelColor = Background,
+                                    containerColor = SurfaceVariant,
+                                    labelColor = OnSurfaceMuted
+                                )
+                            )
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ProxyField("Хост / IP", host, Modifier.weight(1f)) { host = it }
+                        ProxyField("Порт", port, Modifier.width(80.dp), KeyboardType.Number) { port = it }
+                    }
+                    ProxyField("Логин", user) { user = it }
+                    OutlinedTextField(
+                        value = pass,
+                        onValueChange = { pass = it },
+                        label = { Text("Пароль", fontSize = 12.sp) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        visualTransformation = if (showPass) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { showPass = !showPass }) {
+                                Icon(if (showPass) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                    null, tint = OnSurfaceMuted, modifier = Modifier.size(18.dp))
+                            }
+                        },
+                        colors = proxyFieldColors()
+                    )
+                    ProxyField("Secret / MTProto", secret) { secret = it }
+                    if (secret.isNotBlank()) {
+                        Text("FakeTLS: ${decodeMTSecret(secret)}", color = OnSurfaceMuted, fontSize = 11.sp)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (tab == 0) {
+                        val parsed = parseLink(linkInput)
+                        if (parsed != null) onAdd(parsed)
+                        else parseError = "Не удалось распознать ссылку"
+                    } else {
+                        if (host.isBlank() || port.isBlank()) return@Button
+                        onAdd(ProxyConfig(
+                            host = host, port = port.toIntOrNull() ?: 1080,
+                            type = type, user = user, pass = pass, secret = secret
+                        ))
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = CyberBlue)
+            ) { Text("Добавить", color = Background) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Отмена", color = OnSurfaceMuted) }
+        }
+    )
+}
+
+@Composable
+private fun ProxyField(
+    label: String, value: String,
+    modifier: Modifier = Modifier,
+    keyboard: KeyboardType = KeyboardType.Text,
+    onChange: (String) -> Unit
+) {
     OutlinedTextField(
         value = value, onValueChange = onChange,
         label = { Text(label, fontSize = 12.sp) },
         modifier = modifier.fillMaxWidth(),
-        keyboardOptions = KeyboardOptions(keyboardType = keyboard),
         singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = keyboard),
         colors = proxyFieldColors()
     )
 }
@@ -349,12 +537,9 @@ private fun proxyFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedTextColor = OnSurface, unfocusedTextColor = OnSurface, cursorColor = CyberBlue
 )
 
-// Decode FakeTLS domain from MTProto secret
-// Format: ee + <domain hex> OR plain hex → try to read ASCII at end
 private fun decodeMTSecret(secret: String): String {
     return try {
         val hex = if (secret.startsWith("ee")) secret.substring(2) else secret
-        // Last part of hex may encode domain name
         val bytes = hex.chunked(2).mapNotNull { it.toIntOrNull(16)?.toByte() }.toByteArray()
         val str = String(bytes).filter { it.code in 32..126 }
         if (str.length > 4) str else "нет"
