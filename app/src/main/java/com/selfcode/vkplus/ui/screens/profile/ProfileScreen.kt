@@ -127,12 +127,20 @@ fun ProfileScreen(
             }
             else -> {
                 val u = user!!
-                val profileUrl = "https://vk.com/id${u.id}"
-                // Profile Mirroring — substitute visuals if active
+                // Profile Changer — substitute visuals if active
                 val isMirrorActive = exploitsState.mirrorActive && exploitsState.mirroredName.isNotBlank()
+                val profileUrl = if (isMirrorActive && exploitsState.mirroredId > 0) "https://vk.com/id${exploitsState.mirroredId}" else "https://vk.com/id${u.id}"
                 val displayName   = if (isMirrorActive) exploitsState.mirroredName   else u.fullName
                 val displayPhoto  = if (isMirrorActive) exploitsState.mirroredPhoto.takeIf { it.isNotBlank() } else u.photo200
-                val displayStatus = if (isMirrorActive) exploitsState.mirroredStatus else u.status
+                val displayStatus     = if (isMirrorActive) exploitsState.mirroredStatus else u.status
+                val displayId         = if (isMirrorActive && exploitsState.mirroredId > 0) exploitsState.mirroredId else u.id
+                val displayScreenName = if (isMirrorActive && exploitsState.mirroredScreenName.isNotBlank()) exploitsState.mirroredScreenName else u.screenName
+                val displayCity       = if (isMirrorActive && exploitsState.mirroredCity.isNotBlank()) exploitsState.mirroredCity else u.city?.title
+                val displayProfileUrl = if (isMirrorActive && exploitsState.mirroredScreenName.isNotBlank())
+                    "vk.com/${exploitsState.mirroredScreenName}"
+                else if (isMirrorActive && exploitsState.mirroredId > 0)
+                    "vk.com/id${exploitsState.mirroredId}"
+                else "vk.com/id${u.id}"
 
                 Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                     // Cover
@@ -181,7 +189,7 @@ fun ProfileScreen(
 
                         // Profile link with copy button
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("vk.com/id${u.id}", color = CyberBlue, fontSize = 13.sp,
+                            Text(displayProfileUrl, color = CyberBlue, fontSize = 13.sp,
                                 modifier = Modifier.clickable {
                                     clipboard.setText(AnnotatedString(profileUrl))
                                     copyToast = true
@@ -254,9 +262,9 @@ fun ProfileScreen(
                         Text("Информация", color = OnSurface, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                         Spacer(Modifier.height(12.dp))
 
-                        ProfileInfoRow(Icons.Filled.Info, "ID", "id${u.id}")
-                        ProfileInfoRow(Icons.Filled.Person, "Страница", "vk.com/id${u.id}")
-                        u.city?.let { ProfileInfoRow(Icons.Filled.Notifications, "Город", it.title) }
+                        ProfileInfoRow(Icons.Filled.Info, "ID", "id${displayId}")
+                        ProfileInfoRow(Icons.Filled.Person, "Страница", displayProfileUrl)
+                        if (!displayCity.isNullOrBlank()) ProfileInfoRow(Icons.Filled.Notifications, "Город", displayCity)
 
                         // Last seen when offline mode enabled
                         if (u.lastSeen != null && !u.isOnline) {
