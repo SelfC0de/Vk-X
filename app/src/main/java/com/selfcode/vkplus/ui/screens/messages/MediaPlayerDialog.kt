@@ -1,12 +1,10 @@
 package com.selfcode.vkplus.ui.screens.messages
 
-import android.net.Uri
+import android.media.MediaPlayer
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import android.widget.VideoView
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -28,8 +26,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.media3.common.MediaItem
-import androidx.media3.exoplayer.ExoPlayer
 import coil.compose.AsyncImage
 import com.selfcode.vkplus.ui.theme.*
 import kotlinx.coroutines.delay
@@ -61,25 +57,37 @@ fun MediaPlayerDialog(item: MediaPlayItem, onDismiss: () -> Unit) {
 
 @Composable
 private fun AudioPlayerContent(item: MediaPlayItem.Audio, onDismiss: () -> Unit) {
-    val context = LocalContext.current
-    val player = remember {
-        ExoPlayer.Builder(context).build().apply {
-            setMediaItem(MediaItem.fromUri(item.url))
-            prepare()
-            playWhenReady = true
+    var isPlaying by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+    var progress by remember { mutableStateOf(0f) }
+    var position by remember { mutableStateOf(0) }
+    val player = remember { MediaPlayer() }
+
+    DisposableEffect(Unit) {
+        onDispose { runCatching { player.release() } }
+    }
+
+    LaunchedEffect(item.url) {
+        isLoading = true
+        runCatching {
+            player.setDataSource(item.url)
+            player.prepareAsync()
+            player.setOnPreparedListener {
+                isLoading = false; it.start(); isPlaying = true
+            }
+            player.setOnCompletionListener { isPlaying = false; progress = 0f; position = 0 }
+            player.setOnErrorListener { _, _, _ -> isLoading = false; false }
         }
     }
-    DisposableEffect(Unit) { onDispose { player.release() } }
 
-    var isPlaying by remember { mutableStateOf(true) }
-    var position by remember { mutableStateOf(0L) }
-    val duration = if (item.duration > 0) item.duration * 1000L else 1L
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            position = player.currentPosition
-            isPlaying = player.isPlaying
-            delay(500)
+    LaunchedEffect(isPlaying) {
+        while (isPlaying) {
+            delay(300)
+            runCatching {
+                val dur = player.duration.takeIf { it > 0 } ?: return@runCatching
+                progress = player.currentPosition.toFloat() / dur
+                position = player.currentPosition / 1000
+            }
         }
     }
 
@@ -91,33 +99,43 @@ private fun AudioPlayerContent(item: MediaPlayItem.Audio, onDismiss: () -> Unit)
             }
         }
         Spacer(Modifier.height(16.dp))
-        Box(modifier = Modifier.size(80.dp).background(CyberBlue.copy(0.15f), CircleShape), contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier.size(80.dp).background(CyberBlue.copy(0.15f), CircleShape),
+            contentAlignment = Alignment.Center) {
             Icon(Icons.Filled.MusicNote, null, tint = CyberBlue, modifier = Modifier.size(40.dp))
         }
         Spacer(Modifier.height(14.dp))
-        Text("${item.artist} — ${item.title}", color = OnSurface, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-            maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Text("${item.artist} — ${item.title}", color = OnSurface, fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(16.dp))
-        Slider(
-            value = if (duration > 0) position.toFloat() / duration else 0f,
-            onValueChange = { player.seekTo((it * duration).toLong()) },
+        Slider(value = progress,
+            onValueChange = {
+                runCatching {
+                    val dur = player.duration.takeIf { it > 0 } ?: return@runCatching
+                    player.seekTo((it * dur).toInt())
+                }
+            },
             colors = SliderDefaults.colors(thumbColor = CyberBlue, activeTrackColor = CyberBlue, inactiveTrackColor = Divider)
         )
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(formatTime(position / 1000), color = OnSurfaceMuted, fontSize = 11.sp)
+            Text(formatTime(position.toLong()), color = OnSurfaceMuted, fontSize = 11.sp)
             Text(formatTime(item.duration.toLong()), color = OnSurfaceMuted, fontSize = 11.sp)
         }
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { player.seekTo(maxOf(0L, player.currentPosition - 10000)) }) {
+            IconButton(onClick = { runCatching { player.seekTo(maxOf(0, player.currentPosition - 10000)) } }) {
                 Icon(Icons.Filled.Replay10, null, tint = OnSurface, modifier = Modifier.size(28.dp))
             }
-            Box(modifier = Modifier.size(52.dp).background(CyberBlue, CircleShape).clickable {
-                if (player.isPlaying) player.pause() else player.play()
-            }, contentAlignment = Alignment.Center) {
-                Icon(if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow, null, tint = Background, modifier = Modifier.size(28.dp))
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.size(48.dp), color = CyberBlue)
+            } else {
+                Box(modifier = Modifier.size(52.dp).background(CyberBlue, CircleShape).clickable {
+                    runCatching { if (player.isPlaying) { player.pause(); isPlaying = false } else { player.start(); isPlaying = true } }
+                }, contentAlignment = Alignment.Center) {
+                    Icon(if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                        null, tint = Background, modifier = Modifier.size(28.dp))
+                }
             }
-            IconButton(onClick = { player.seekTo(minOf(duration, player.currentPosition + 10000)) }) {
+            IconButton(onClick = { runCatching { val dur = player.duration; player.seekTo(minOf(dur, player.currentPosition + 10000)) } }) {
                 Icon(Icons.Filled.Forward10, null, tint = OnSurface, modifier = Modifier.size(28.dp))
             }
         }
@@ -127,21 +145,19 @@ private fun AudioPlayerContent(item: MediaPlayItem.Audio, onDismiss: () -> Unit)
 
 @Composable
 private fun VideoPlayerContent(item: MediaPlayItem.Video, onDismiss: () -> Unit) {
-    val context = LocalContext.current
-    val player = remember {
-        ExoPlayer.Builder(context).build().apply {
-            setMediaItem(MediaItem.fromUri(item.url))
-            prepare()
-            playWhenReady = true
-        }
+    val player = remember { MediaPlayer() }
+    var isReady by remember { mutableStateOf(false) }
+
+    DisposableEffect(Unit) {
+        onDispose { runCatching { player.release() } }
     }
-    DisposableEffect(Unit) { onDispose { player.release() } }
 
     Column {
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(item.title.take(40), color = OnSurface, fontSize = 13.sp, fontWeight = FontWeight.Medium,
-                modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(item.title.take(40), color = OnSurface, fontSize = 13.sp,
+                fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f),
+                maxLines = 1, overflow = TextOverflow.Ellipsis)
             IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
                 Icon(Icons.Filled.Close, null, tint = OnSurfaceMuted, modifier = Modifier.size(18.dp))
             }
@@ -151,9 +167,18 @@ private fun VideoPlayerContent(item: MediaPlayItem.Video, onDismiss: () -> Unit)
                 SurfaceView(ctx).apply {
                     layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 600)
                     holder.addCallback(object : SurfaceHolder.Callback {
-                        override fun surfaceCreated(h: SurfaceHolder) { player.setVideoSurface(h.surface) }
+                        override fun surfaceCreated(h: SurfaceHolder) {
+                            runCatching {
+                                player.setDisplay(h)
+                                if (!isReady) {
+                                    player.setDataSource(item.url)
+                                    player.prepareAsync()
+                                    player.setOnPreparedListener { it.start(); isReady = true }
+                                }
+                            }
+                        }
                         override fun surfaceChanged(h: SurfaceHolder, f: Int, w: Int, he: Int) {}
-                        override fun surfaceDestroyed(h: SurfaceHolder) { player.setVideoSurface(null) }
+                        override fun surfaceDestroyed(h: SurfaceHolder) {}
                     })
                 }
             },
@@ -172,14 +197,8 @@ private fun GifPlayerContent(item: MediaPlayItem.Gif, onDismiss: () -> Unit) {
                 Icon(Icons.Filled.Close, null, tint = OnSurfaceMuted, modifier = Modifier.size(16.dp))
             }
         }
-        // Coil supports GIF playback with the gif decoder
-        AsyncImage(
-            model = coil.request.ImageRequest.Builder(LocalContext.current)
-                .data(item.url)
-                .build(),
-            contentDescription = "GIF",
-            modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp)
-        )
+        AsyncImage(model = item.url, contentDescription = "GIF",
+            modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp))
     }
 }
 
