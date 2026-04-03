@@ -157,7 +157,7 @@ fun ProfileScreen(
                             Text(displayName, color = if (isMirrorActive) Color(0xFFFF6B35) else OnSurface, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                             if (exploitsState.fakeVerification) {
                                 Spacer(Modifier.width(6.dp))
-                                Icon(Icons.Filled.CheckCircle, null, tint = CyberAccent, modifier = Modifier.size(20.dp))
+                                Icon(Icons.Filled.Verified, null, tint = Color(0xFF1DA1F2), modifier = Modifier.size(20.dp))
                             }
                             if (!exploitsState.fakeVerification && settingsState.verifyChecker) {
                                 VerificationBadgesInline(u.verified, u.verificationInfo)

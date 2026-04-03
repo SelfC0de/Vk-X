@@ -29,7 +29,7 @@ private val FAVICON_URLS = mapOf(
     "vtb"       to "https://www.vtb.ru/favicon.ico"
 )
 
-// Синяя галочка VK (verified == 1)
+// Синяя галочка VK (verified == 1, официальный аккаунт)
 @Composable
 fun BlueCheckBadge() {
     Icon(
@@ -40,46 +40,67 @@ fun BlueCheckBadge() {
     )
 }
 
-// Строка "Верификация: <иконки>" или "Верификация: Отсутствует"
+// Серая галочка (verification_info — сервисная верификация через банки/госуслуги)
+@Composable
+private fun GrayCheckBadge() {
+    Icon(
+        Icons.Filled.Verified,
+        contentDescription = "Подтверждён через сервис",
+        tint = Color(0xFF9E9E9E),
+        modifier = Modifier.size(18.dp)
+    )
+}
+
+// Строка "Верификация: <значки>" или "Верификация: Отсутствует"
 @Composable
 fun VerificationRow(verified: Int, info: VKVerificationInfo?) {
-    val hasVerif = verified == 1 || (info != null && info.verifications.isNotEmpty())
+    val serviceVerifs = info?.verifications?.filter { FAVICON_URLS.containsKey(it.type) }.orEmpty()
+    val hasVkBlue     = verified == 1
+    val hasServiceGray = serviceVerifs.isNotEmpty()
+    val hasAny         = hasVkBlue || hasServiceGray
 
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text("Верификация: ", color = OnSurfaceMuted, fontSize = 13.sp)
-        if (!hasVerif) {
+        if (!hasAny) {
             Text("Отсутствует", color = OnSurfaceMuted, fontSize = 13.sp)
         } else {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (verified == 1) {
-                    BlueCheckBadge()
-                }
-                info?.verifications?.sortedBy { it.priority }?.forEach { v ->
-                    val url = FAVICON_URLS[v.type] ?: return@forEach
-                    SafeFaviconImage(url = url, name = v.name)
+                if (hasVkBlue) BlueCheckBadge()
+                // Серая галочка + иконки сервисов
+                if (hasServiceGray) {
+                    GrayCheckBadge()
+                    serviceVerifs.sortedBy { it.priority }.forEach { v ->
+                        val url = FAVICON_URLS[v.type] ?: return@forEach
+                        SafeFaviconImage(url = url, name = v.name)
+                    }
                 }
             }
         }
     }
 }
 
-// Только иконки рядом с именем (без текста)
+// Только значки рядом с именем (без текста)
 @Composable
 fun VerificationBadgesInline(verified: Int, info: VKVerificationInfo?) {
-    val hasVerif = verified == 1 || (info != null && info.verifications.isNotEmpty())
-    if (!hasVerif) return
+    val serviceVerifs = info?.verifications?.filter { FAVICON_URLS.containsKey(it.type) }.orEmpty()
+    val hasVkBlue      = verified == 1
+    val hasServiceGray = serviceVerifs.isNotEmpty()
+    if (!hasVkBlue && !hasServiceGray) return
 
     Row(
         horizontalArrangement = Arrangement.spacedBy(3.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (verified == 1) BlueCheckBadge()
-        info?.verifications?.sortedBy { it.priority }?.forEach { v ->
-            val url = FAVICON_URLS[v.type] ?: return@forEach
-            SafeFaviconImage(url = url, name = v.name)
+        if (hasVkBlue) BlueCheckBadge()
+        if (hasServiceGray) {
+            GrayCheckBadge()
+            serviceVerifs.sortedBy { it.priority }.forEach { v ->
+                val url = FAVICON_URLS[v.type] ?: return@forEach
+                SafeFaviconImage(url = url, name = v.name)
+            }
         }
     }
 }
@@ -95,19 +116,11 @@ private fun SafeFaviconImage(url: String, name: String) {
             .clip(RoundedCornerShape(3.dp))
     ) {
         when (painter.state) {
-            is AsyncImagePainter.State.Loading -> {
-                // Пустое место пока грузится — не краш
-                Spacer(Modifier.size(16.dp))
-            }
-            is AsyncImagePainter.State.Error -> {
-                // Если не загрузилась — серый щит вместо краша
-                Icon(
-                    Icons.Filled.Shield,
-                    contentDescription = name,
-                    tint = OnSurfaceMuted,
-                    modifier = Modifier.size(14.dp)
-                )
-            }
+            is AsyncImagePainter.State.Loading -> Spacer(Modifier.size(16.dp))
+            is AsyncImagePainter.State.Error   -> Icon(
+                Icons.Filled.Shield, contentDescription = name,
+                tint = OnSurfaceMuted, modifier = Modifier.size(14.dp)
+            )
             else -> SubcomposeAsyncImageContent()
         }
     }
