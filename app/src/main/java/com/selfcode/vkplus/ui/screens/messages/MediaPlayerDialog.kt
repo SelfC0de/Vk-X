@@ -146,10 +146,14 @@ private fun VideoPlayerContent(item: MediaPlayItem.Video, onDismiss: () -> Unit)
             }
         }
         AndroidView(
-            factory = {
-                PlayerView(it).apply {
-                    this.player = player
+            factory = { ctx ->
+                SurfaceView(ctx).apply {
                     layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 600)
+                    holder.addCallback(object : SurfaceHolder.Callback {
+                        override fun surfaceCreated(h: SurfaceHolder) { player.setVideoSurface(h.surface) }
+                        override fun surfaceChanged(h: SurfaceHolder, f: Int, w: Int, he: Int) {}
+                        override fun surfaceDestroyed(h: SurfaceHolder) { player.setVideoSurface(null) }
+                    })
                 }
             },
             modifier = Modifier.fillMaxWidth().height(240.dp)

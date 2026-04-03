@@ -93,6 +93,34 @@ private fun PrivacyTab(state: SettingsUiState, vm: SettingsViewModel, onAntiScre
                 "Push когда тебе начинают печатать →👤", state.typePush, vm::setTypePush)
         }
 
+        SettingsSection("🔒 Защита от DPI / Fingerprinting") {
+            SettingsToggle(
+                icon = Icons.Filled.Security,
+                title = "SNI Spoofing",
+                subtitle = "Маскирует TLS Client Hello под cloudflare.com. Провайдер видит 'безобидный' домен вместо api.vk.com",
+                checked = state.sniSpoof,
+                onChecked = { vm.setSniSpoof(it) },
+                tint = Color(0xFF00E5FF)
+            )
+            SettingsDivider()
+            SettingsToggle(
+                icon = Icons.Filled.ManageAccounts,
+                title = "User-Agent Switcher",
+                subtitle = "Подменяет заголовок User-Agent на браузерный (Chrome/Safari/Edge). Маскирует трафик от анализа DPI",
+                checked = state.uaSwitcher,
+                onChecked = { vm.setUaSwitcher(it) },
+                tint = Color(0xFFFFAB40)
+            )
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Info, null, tint = OnSurfaceMuted, modifier = Modifier.size(13.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Изменения применяются при следующем запуске приложения.",
+                        color = OnSurfaceMuted, fontSize = 11.sp, lineHeight = 15.sp)
+                }
+            }
+        }
+
         Box(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), contentAlignment = Alignment.Center) {
             Text("VK+ by SelfCode", color = OnSurfaceMuted, fontSize = 11.sp)
         }
@@ -173,6 +201,34 @@ private fun EngineTab(state: SettingsUiState, vm: SettingsViewModel) {
             }
         }
 
+        SettingsSection("🔒 Защита от DPI / Fingerprinting") {
+            SettingsToggle(
+                icon = Icons.Filled.Security,
+                title = "SNI Spoofing",
+                subtitle = "Маскирует TLS Client Hello под cloudflare.com. Провайдер видит 'безобидный' домен вместо api.vk.com",
+                checked = state.sniSpoof,
+                onChecked = { vm.setSniSpoof(it) },
+                tint = Color(0xFF00E5FF)
+            )
+            SettingsDivider()
+            SettingsToggle(
+                icon = Icons.Filled.ManageAccounts,
+                title = "User-Agent Switcher",
+                subtitle = "Подменяет заголовок User-Agent на браузерный (Chrome/Safari/Edge). Маскирует трафик от анализа DPI",
+                checked = state.uaSwitcher,
+                onChecked = { vm.setUaSwitcher(it) },
+                tint = Color(0xFFFFAB40)
+            )
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Info, null, tint = OnSurfaceMuted, modifier = Modifier.size(13.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Изменения применяются при следующем запуске приложения.",
+                        color = OnSurfaceMuted, fontSize = 11.sp, lineHeight = 15.sp)
+                }
+            }
+        }
+
         Box(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), contentAlignment = Alignment.Center) {
             Text("VK+ by SelfCode", color = OnSurfaceMuted, fontSize = 11.sp)
         }
@@ -227,6 +283,34 @@ private fun DeviceTab(state: SettingsUiState, vm: SettingsViewModel) {
                         "Применяется ко всем запросам автоматически. Влияет на подпись постов и статус устройства в профиле.",
                         color = OnSurfaceMuted, fontSize = 11.sp, lineHeight = 15.sp
                     )
+                }
+            }
+        }
+
+        SettingsSection("🔒 Защита от DPI / Fingerprinting") {
+            SettingsToggle(
+                icon = Icons.Filled.Security,
+                title = "SNI Spoofing",
+                subtitle = "Маскирует TLS Client Hello под cloudflare.com. Провайдер видит 'безобидный' домен вместо api.vk.com",
+                checked = state.sniSpoof,
+                onChecked = { vm.setSniSpoof(it) },
+                tint = Color(0xFF00E5FF)
+            )
+            SettingsDivider()
+            SettingsToggle(
+                icon = Icons.Filled.ManageAccounts,
+                title = "User-Agent Switcher",
+                subtitle = "Подменяет заголовок User-Agent на браузерный (Chrome/Safari/Edge). Маскирует трафик от анализа DPI",
+                checked = state.uaSwitcher,
+                onChecked = { vm.setUaSwitcher(it) },
+                tint = Color(0xFFFFAB40)
+            )
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Info, null, tint = OnSurfaceMuted, modifier = Modifier.size(13.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Изменения применяются при следующем запуске приложения.",
+                        color = OnSurfaceMuted, fontSize = 11.sp, lineHeight = 15.sp)
                 }
             }
         }

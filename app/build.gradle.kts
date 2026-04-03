@@ -73,7 +73,6 @@ dependencies {
     implementation(libs.coil.gif)
     //coil-gif for animated GIF support
     implementation("androidx.media3:media3-exoplayer:1.3.1")
-    implementation("androidx.media3:media3-ui:1.3.1")
     implementation(libs.datastore.preferences)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.gson)

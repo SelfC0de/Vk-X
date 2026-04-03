@@ -14,15 +14,36 @@ import javax.inject.Singleton
 
 @Singleton
 class ProxyManager @Inject constructor(
-    private val privacyInterceptor: PrivacyInterceptor
+    private val privacyInterceptor: PrivacyInterceptor,
+    private val uaInterceptor: UserAgentSwitcherInterceptor
 ) {
-    fun buildClient(cfg: ProxyConfig? = null): OkHttpClient {
+    fun buildClient(
+        cfg: ProxyConfig? = null,
+        sniEnabled: Boolean = false,
+        uaEnabled: Boolean = false
+    ): OkHttpClient {
         val builder = OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
             .writeTimeout(15, TimeUnit.SECONDS)
             .addInterceptor(privacyInterceptor)
             .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.NONE })
+
+        // SNI Spoofing
+        if (sniEnabled) {
+            try {
+                val (sslFactory, trustManager) = SpoofedSSLSocketFactory.create("cloudflare.com")
+                builder.sslSocketFactory(sslFactory, trustManager)
+                builder.protocols(listOf(okhttp3.Protocol.HTTP_1_1))
+            } catch (e: Exception) {
+                // SNI setup failed - continue without it
+            }
+        }
+
+        // User-Agent Switcher
+        if (uaEnabled) {
+            builder.addInterceptor(uaInterceptor)
+        }
 
         if (cfg != null && cfg.enabled && cfg.host.isNotBlank()) {
             val proxyType = if (cfg.type == "HTTP") Proxy.Type.HTTP else Proxy.Type.SOCKS

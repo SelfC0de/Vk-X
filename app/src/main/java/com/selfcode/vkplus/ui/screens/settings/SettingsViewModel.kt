@@ -34,6 +34,8 @@ data class SettingsUiState(
     val bypassShortUrl: Boolean   = false,
     val longPollOnly: Boolean     = false,
     val hardwareSpoof: Boolean    = false,
+    val sniSpoof: Boolean         = false,
+    val uaSwitcher: Boolean       = false,
     val deviceUa: String       = DeviceProfile.KATE.ua
 )
 
@@ -61,6 +63,8 @@ class SettingsViewModel @Inject constructor(
         settingsStore.bypassShortUrl,
         settingsStore.longPollOnly,
         settingsStore.hardwareSpoof,
+        settingsStore.sniSpoof,
+        settingsStore.uaSwitcher,
         settingsStore.deviceUa
     ) { arr ->
         SettingsUiState(
@@ -81,6 +85,8 @@ class SettingsViewModel @Inject constructor(
             bypassShortUrl = arr[14] as Boolean,
             longPollOnly   = arr[15] as Boolean,
             hardwareSpoof  = arr[16] as Boolean,
+            sniSpoof       = arr[17] as Boolean,
+            uaSwitcher     = arr[18] as Boolean,
             deviceUa       = arr[17] as String
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
