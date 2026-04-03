@@ -52,40 +52,6 @@ interface VKApi {
         @Query("v") version: String = "5.199"
     ): VKResponse<VKConversationsResponse>
 
-    @GET("audio.get")
-    suspend fun getAudio(
-        @Query("owner_id") ownerId: Int? = null,
-        @Query("count") count: Int = 100,
-        @Query("offset") offset: Int = 0,
-        @Query("access_token") token: String,
-        @Query("v") version: String = "5.95"
-    ): VKResponse<VKAudioListResponse>
-
-    @GET("audio.search")
-    suspend fun searchAudio(
-        @Query("q") query: String,
-        @Query("count") count: Int = 50,
-        @Query("offset") offset: Int = 0,
-        @Query("access_token") token: String,
-        @Query("v") version: String = "5.95"
-    ): VKResponse<VKAudioListResponse>
-
-    @GET("audio.add")
-    suspend fun addAudio(
-        @Query("audio_id") audioId: Int,
-        @Query("owner_id") ownerId: Int,
-        @Query("access_token") token: String,
-        @Query("v") version: String = "5.95"
-    ): VKResponse<Int>
-
-    @GET("audio.delete")
-    suspend fun deleteAudio(
-        @Query("audio_id") audioId: Int,
-        @Query("owner_id") ownerId: Int,
-        @Query("access_token") token: String,
-        @Query("v") version: String = "5.95"
-    ): VKResponse<Int>
-
     @GET("messages.getHistory")
     suspend fun getHistory(
         @Query("peer_id") peerId: Int,

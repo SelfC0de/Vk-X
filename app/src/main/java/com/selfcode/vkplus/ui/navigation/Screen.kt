@@ -7,7 +7,7 @@ sealed class Screen(val route: String) {
     object Communities : Screen("communities")
     object Settings    : Screen("settings")
     object About       : Screen("about")
-    object Music       : Screen("music")
+    object Proxy       : Screen("proxy")
     object VKPlus      : Screen("vkplus")   // Combined: Exploits + Tools + Search + Photos + Blacklist
     object Friends     : Screen("friends")
     object Photos      : Screen("photos")

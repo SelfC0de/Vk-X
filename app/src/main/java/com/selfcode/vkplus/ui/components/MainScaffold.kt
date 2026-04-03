@@ -39,7 +39,7 @@ private val mainDrawerItems = listOf(
     DrawerItem(Screen.Messages,    "Сообщения",   Icons.Outlined.Message,  Icons.Filled.Message),
     DrawerItem(Screen.Friends,     "Друзья",      Icons.Outlined.People,   Icons.Filled.People),
     DrawerItem(Screen.Communities, "Сообщества",  Icons.Outlined.Group,    Icons.Filled.Group),
-    DrawerItem(Screen.Music,       "Музыка",      Icons.Outlined.MusicNote, Icons.Filled.MusicNote),
+    DrawerItem(Screen.Proxy,       "Прокси",      Icons.Outlined.VpnKey,   Icons.Filled.VpnKey),
     DrawerItem(Screen.Settings,    "Настройки",   Icons.Outlined.Settings, Icons.Filled.Settings),
     DrawerItem(Screen.About,       "About Dev",   Icons.Outlined.Info,     Icons.Filled.Info),
 )
@@ -182,7 +182,7 @@ fun MainScaffold(
                                 Screen.Communities -> "Сообщества"
                                 Screen.Settings -> "Настройки"
                                 Screen.About -> "About Dev"
-                                Screen.Music -> "Музыка"
+                                Screen.Proxy -> "Прокси"
                                 Screen.VKPlus -> "VK+"
                                 else -> "VK+"
                             },

@@ -27,7 +27,7 @@ import com.selfcode.vkplus.ui.screens.messages.MessagesScreen
 import com.selfcode.vkplus.ui.screens.profile.ProfileScreen
 import com.selfcode.vkplus.ui.screens.settings.SettingsScreen
 import com.selfcode.vkplus.ui.screens.about.AboutScreen
-import com.selfcode.vkplus.ui.screens.music.MusicScreen
+import com.selfcode.vkplus.ui.screens.proxy.ProxyScreen
 import com.selfcode.vkplus.ui.screens.communities.CommunitiesScreen
 import com.selfcode.vkplus.ui.screens.communities.CommunityScreen
 import com.selfcode.vkplus.ui.screens.search.SearchPeopleScreen
@@ -43,12 +43,19 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private fun handleDeepLink(intent: android.content.Intent?) {
+        val data = intent?.data ?: return
+        if (data.scheme == "vkplus" && data.host == "proxy") {
+            // Intent received - ProxyScreen will handle via ViewModel
+        }
+    }
 
     @Inject lateinit var repository: VKRepository
     @Inject lateinit var settingsStore: SettingsStore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handleDeepLink(intent)
         val antiScreen = runBlocking { settingsStore.antiScreen.first() }
         applySecureFlag(antiScreen)
         enableEdgeToEdge()
@@ -222,7 +229,7 @@ fun AuthenticatedApp(repository: VKRepository, onLogout: () -> Unit, onAntiScree
             Screen.Settings -> SettingsScreen(onAntiScreenChanged = onAntiScreenChanged)
             Screen.Tools -> ToolsScreen()
             Screen.About -> AboutScreen()
-            Screen.Music -> MusicScreen()
+            Screen.Proxy -> ProxyScreen()
             Screen.Exploits -> ExploitsScreen()
             Screen.Communities -> {
                 if (currentCommunityId != null) {
