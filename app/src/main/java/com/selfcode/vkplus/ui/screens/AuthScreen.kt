@@ -16,7 +16,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -327,7 +329,7 @@ private fun TokenTab(onManualToken: (String) -> Unit, showInvalidError: Boolean)
                                 val txt = clipboardManager.getText()?.text?.trim() ?: ""
                                 if (txt.isNotBlank()) { token = txt; error = null }
                             }) {
-                                Icon(Icons.Outlined.ContentPaste, null, tint = CyberBlue, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Filled.ContentPaste, null, tint = CyberBlue, modifier = Modifier.size(18.dp))
                             }
                         }
                         IconButton(onClick = { tokenVisible = !tokenVisible }) {
