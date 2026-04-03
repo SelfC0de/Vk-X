@@ -82,6 +82,7 @@ class SettingsStore @Inject constructor(
     suspend fun setBypassShortUrl(v: Boolean)     = context.settingsDataStore.edit { it[KEY_BYPASS_SHORT_URL]   = v }
     suspend fun setLongPollOnly(v: Boolean)       = context.settingsDataStore.edit { it[KEY_LONGPOLL_ONLY]      = v }
     suspend fun setHardwareSpoof(v: Boolean)      = context.settingsDataStore.edit { it[KEY_HARDWARE_SPOOF]     = v }
+    suspend fun setVerifyChecker(v: Boolean)      = context.settingsDataStore.edit { it[KEY_VERIFY_CHECKER]     = v }
 }
 
 enum class DeviceProfile(val label: String, val ua: String) {
