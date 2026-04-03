@@ -7,10 +7,14 @@ import com.selfcode.vkplus.data.model.VKUser
 import com.selfcode.vkplus.data.repository.VKRepository
 import com.selfcode.vkplus.data.repository.VKResult
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
+import java.net.URL
 import javax.inject.Inject
 
 data class GiftInfo(val gift: VKGift, val realSenderId: Int)
@@ -24,7 +28,13 @@ data class ToolsUiState(
     val isRemoving: Boolean = false,
     val removedCount: Int = 0,
     val scanDone: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    // Currency Exchange
+    val currencyBase: String = "USD",
+    val currencyTarget: String = "RUB",
+    val currencyResult: Double? = null,
+    val currencyLoading: Boolean = false,
+    val currencyError: String? = null
 )
 
 @HiltViewModel
@@ -97,4 +107,24 @@ class ToolsViewModel @Inject constructor(
     fun reset() {
         _uiState.value = ToolsUiState()
     }
+    fun setCurrencyBase(v: String)   { _uiState.value = _uiState.value.copy(currencyBase = v, currencyResult = null, currencyError = null) }
+    fun setCurrencyTarget(v: String) { _uiState.value = _uiState.value.copy(currencyTarget = v, currencyResult = null, currencyError = null) }
+
+    fun fetchExchangeRate() {
+        val base   = _uiState.value.currencyBase
+        val target = _uiState.value.currencyTarget
+        _uiState.value = _uiState.value.copy(currencyLoading = true, currencyResult = null, currencyError = null)
+        viewModelScope.launch {
+            try {
+                val url = "https://api.freecurrencyapi.com/v1/latest?apikey=fca_live_XEMzZbdOk47fgjrXN0c1Veo9HKTagxomnJu5CgJq&base_currency=$base&currencies=$target"
+                val json = withContext(Dispatchers.IO) { URL(url).readText() }
+                val data = JSONObject(json).getJSONObject("data")
+                val rate = data.getDouble(target)
+                _uiState.value = _uiState.value.copy(currencyLoading = false, currencyResult = rate)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(currencyLoading = false, currencyError = e.message ?: "Ошибка запроса")
+            }
+        }
+    }
+
 }

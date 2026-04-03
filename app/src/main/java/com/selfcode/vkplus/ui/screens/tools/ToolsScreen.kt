@@ -21,6 +21,12 @@ import coil.compose.AsyncImage
 import com.selfcode.vkplus.ui.screens.settings.SettingsDivider
 import com.selfcode.vkplus.ui.screens.settings.SettingsSection
 import com.selfcode.vkplus.ui.theme.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.ui.graphics.Color
+import kotlin.math.roundToInt
 
 @Composable
 fun ToolsScreen(viewModel: ToolsViewModel = hiltViewModel()) {
@@ -33,6 +39,7 @@ fun ToolsScreen(viewModel: ToolsViewModel = hiltViewModel()) {
         item { SettingsSection("🧹 Управление друзьями") { RemoveBannedCard(state, viewModel) } }
         item { SettingsSection("🎁 Bypass Gift Anonymity") { GiftAnonymityCard(state, viewModel) } }
         item { SettingsSection("🔓 Bypass") { BypassInfoCard() } }
+        item { SettingsSection("💱 Currency Exchange") { CurrencyExchangeCard(state, viewModel) } }
     }
 }
 
@@ -185,6 +192,155 @@ private fun BypassInfoCard() {
         }
     }
 }
+
+private val ALL_CURRENCIES = listOf(
+    "USD", "EUR", "RUB", "GBP", "CNY", "JPY", "AED", "TRY", "KZT", "BYN",
+    "CHF", "CAD", "AUD", "SEK", "NOK", "PLN", "CZK", "HUF", "INR", "BRL"
+)
+
+@Composable
+private fun CurrencyExchangeCard(state: ToolsUiState, vm: ToolsViewModel) {
+    var baseExpanded   by remember { mutableStateOf(false) }
+    var targetExpanded by remember { mutableStateOf(false) }
+
+    Column(modifier = Modifier.padding(16.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Filled.CurrencyExchange, null, tint = Color(0xFFFFD700), modifier = Modifier.size(22.dp))
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                Text("Currency Exchange", color = OnSurface, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                Text("Актуальный курс валют через FreeCurrencyAPI", color = OnSurfaceMuted, fontSize = 12.sp)
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        // Base + Target selectors
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Base
+            Column(Modifier.weight(1f)) {
+                Text("Base Currency", color = OnSurfaceMuted, fontSize = 11.sp, modifier = Modifier.padding(bottom = 4.dp))
+                Box {
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(SurfaceVariant)
+                            .border(1.dp, Divider, RoundedCornerShape(10.dp))
+                            .clickable { baseExpanded = true }
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(state.currencyBase, color = OnSurface, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        Icon(Icons.Filled.KeyboardArrowDown, null, tint = OnSurfaceMuted, modifier = Modifier.size(18.dp))
+                    }
+                    DropdownMenu(expanded = baseExpanded, onDismissRequest = { baseExpanded = false }) {
+                        ALL_CURRENCIES.forEach { cur ->
+                            DropdownMenuItem(
+                                text = { Text(cur, color = if (cur == state.currencyBase) CyberBlue else OnSurface) },
+                                onClick = { vm.setCurrencyBase(cur); baseExpanded = false }
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Swap icon
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = 22.dp)) {
+                Icon(Icons.Filled.SyncAlt, null, tint = OnSurfaceMuted, modifier = Modifier.size(20.dp)
+                    .clickable { vm.setCurrencyBase(state.currencyTarget); vm.setCurrencyTarget(state.currencyBase) })
+            }
+
+            // Target
+            Column(Modifier.weight(1f)) {
+                Text("To Currency", color = OnSurfaceMuted, fontSize = 11.sp, modifier = Modifier.padding(bottom = 4.dp))
+                Box {
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(SurfaceVariant)
+                            .border(1.dp, Divider, RoundedCornerShape(10.dp))
+                            .clickable { targetExpanded = true }
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(state.currencyTarget, color = OnSurface, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        Icon(Icons.Filled.KeyboardArrowDown, null, tint = OnSurfaceMuted, modifier = Modifier.size(18.dp))
+                    }
+                    DropdownMenu(expanded = targetExpanded, onDismissRequest = { targetExpanded = false }) {
+                        ALL_CURRENCIES.forEach { cur ->
+                            DropdownMenuItem(
+                                text = { Text(cur, color = if (cur == state.currencyTarget) CyberBlue else OnSurface) },
+                                onClick = { vm.setCurrencyTarget(cur); targetExpanded = false }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        // Result card
+        when {
+            state.currencyLoading -> {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(color = CyberBlue, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    Spacer(Modifier.width(10.dp))
+                    Text("Получаем курс...", color = OnSurfaceMuted, fontSize = 13.sp)
+                }
+            }
+            state.currencyResult != null -> {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(CyberBlue.copy(alpha = 0.08f))
+                        .border(1.dp, CyberBlue.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                        .padding(16.dp)
+                ) {
+                    Text("1 ${state.currencyBase} =", color = OnSurfaceMuted, fontSize = 13.sp)
+                    Spacer(Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            "%.4f".format(state.currencyResult),
+                            color = CyberBlue,
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(state.currencyTarget, color = OnSurfaceMuted, fontSize = 18.sp,
+                            fontWeight = FontWeight.Medium, modifier = Modifier.padding(bottom = 4.dp))
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "100 ${state.currencyBase} = ${"%.2f".format(state.currencyResult!! * 100)} ${state.currencyTarget}",
+                        color = OnSurfaceMuted, fontSize = 12.sp
+                    )
+                }
+            }
+            state.currencyError != null -> {
+                Text("⚠ ${state.currencyError}", color = ErrorRed, fontSize = 12.sp)
+            }
+            else -> {
+                Text("Выберите валюты и нажмите Получить курс", color = OnSurfaceMuted, fontSize = 12.sp)
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        Button(
+            onClick = { vm.fetchExchangeRate() },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !state.currencyLoading,
+            shape = RoundedCornerShape(10.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = CyberBlue)
+        ) {
+            Icon(Icons.Filled.Refresh, null, tint = Background, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
+            Text("Получить курс", color = Background, fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
 
 @Composable
 private fun LoadingRow(text: String, color: androidx.compose.ui.graphics.Color) {
