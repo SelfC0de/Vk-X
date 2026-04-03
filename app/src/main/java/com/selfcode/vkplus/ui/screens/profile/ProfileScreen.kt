@@ -134,7 +134,7 @@ fun ProfileScreen(
                 val displayPhoto  = if (isMirrorActive) exploitsState.mirroredPhoto.takeIf { it.isNotBlank() } else u.photo200
                 val displayStatus     = if (isMirrorActive) exploitsState.mirroredStatus else u.status
                 val displayId         = if (isMirrorActive && exploitsState.mirroredId > 0) exploitsState.mirroredId else u.id
-                val displayScreenName = if (isMirrorActive && exploitsState.mirroredScreenName.isNotBlank()) exploitsState.mirroredScreenName else u.screenName
+                val displayScreenName = if (isMirrorActive && exploitsState.mirroredScreenName.isNotBlank()) exploitsState.mirroredScreenName else ""
                 val displayCity       = if (isMirrorActive && exploitsState.mirroredCity.isNotBlank()) exploitsState.mirroredCity else u.city?.title
                 val displayProfileUrl = if (isMirrorActive && exploitsState.mirroredScreenName.isNotBlank())
                     "vk.com/${exploitsState.mirroredScreenName}"
