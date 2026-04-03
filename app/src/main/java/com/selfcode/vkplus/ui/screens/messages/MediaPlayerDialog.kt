@@ -1,6 +1,8 @@
 package com.selfcode.vkplus.ui.screens.messages
 
 import android.net.Uri
+import android.view.SurfaceHolder
+import android.view.SurfaceView
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.VideoView
@@ -28,7 +30,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
 import com.selfcode.vkplus.ui.theme.*
 import kotlinx.coroutines.delay

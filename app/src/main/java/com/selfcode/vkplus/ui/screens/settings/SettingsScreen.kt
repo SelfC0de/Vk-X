@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -99,8 +100,7 @@ private fun PrivacyTab(state: SettingsUiState, vm: SettingsViewModel, onAntiScre
                 title = "SNI Spoofing",
                 subtitle = "Маскирует TLS Client Hello под cloudflare.com. Провайдер видит 'безобидный' домен вместо api.vk.com",
                 checked = state.sniSpoof,
-                onChecked = { vm.setSniSpoof(it) },
-                tint = Color(0xFF00E5FF)
+                onCheckedChange = { vm.setSniSpoof(it) }
             )
             SettingsDivider()
             SettingsToggle(
@@ -108,8 +108,7 @@ private fun PrivacyTab(state: SettingsUiState, vm: SettingsViewModel, onAntiScre
                 title = "User-Agent Switcher",
                 subtitle = "Подменяет заголовок User-Agent на браузерный (Chrome/Safari/Edge). Маскирует трафик от анализа DPI",
                 checked = state.uaSwitcher,
-                onChecked = { vm.setUaSwitcher(it) },
-                tint = Color(0xFFFFAB40)
+                onCheckedChange = { vm.setUaSwitcher(it) }
             )
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -207,8 +206,7 @@ private fun EngineTab(state: SettingsUiState, vm: SettingsViewModel) {
                 title = "SNI Spoofing",
                 subtitle = "Маскирует TLS Client Hello под cloudflare.com. Провайдер видит 'безобидный' домен вместо api.vk.com",
                 checked = state.sniSpoof,
-                onChecked = { vm.setSniSpoof(it) },
-                tint = Color(0xFF00E5FF)
+                onCheckedChange = { vm.setSniSpoof(it) }
             )
             SettingsDivider()
             SettingsToggle(
@@ -216,8 +214,7 @@ private fun EngineTab(state: SettingsUiState, vm: SettingsViewModel) {
                 title = "User-Agent Switcher",
                 subtitle = "Подменяет заголовок User-Agent на браузерный (Chrome/Safari/Edge). Маскирует трафик от анализа DPI",
                 checked = state.uaSwitcher,
-                onChecked = { vm.setUaSwitcher(it) },
-                tint = Color(0xFFFFAB40)
+                onCheckedChange = { vm.setUaSwitcher(it) }
             )
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -293,8 +290,7 @@ private fun DeviceTab(state: SettingsUiState, vm: SettingsViewModel) {
                 title = "SNI Spoofing",
                 subtitle = "Маскирует TLS Client Hello под cloudflare.com. Провайдер видит 'безобидный' домен вместо api.vk.com",
                 checked = state.sniSpoof,
-                onChecked = { vm.setSniSpoof(it) },
-                tint = Color(0xFF00E5FF)
+                onCheckedChange = { vm.setSniSpoof(it) }
             )
             SettingsDivider()
             SettingsToggle(
@@ -302,8 +298,7 @@ private fun DeviceTab(state: SettingsUiState, vm: SettingsViewModel) {
                 title = "User-Agent Switcher",
                 subtitle = "Подменяет заголовок User-Agent на браузерный (Chrome/Safari/Edge). Маскирует трафик от анализа DPI",
                 checked = state.uaSwitcher,
-                onChecked = { vm.setUaSwitcher(it) },
-                tint = Color(0xFFFFAB40)
+                onCheckedChange = { vm.setUaSwitcher(it) }
             )
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
